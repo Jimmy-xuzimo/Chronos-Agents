@@ -1,6 +1,6 @@
 # 指标与协议口径
 
-Schema 版本为 1，参考 [`schema.json`](../protocol/schema.json)。时间为 UTC RFC3339，服务端分别保留 `sampled_at` 与 `received_at`。设备 ID 在 Hub 配对时分配；不使用主机名、MAC 或硬件序列号生成身份。
+Schema 版本为 1，参考 [`schema.json`](../protocol/schema.json)。时间为 UTC RFC3339，服务端分别保留 `sampled_at` 与 `received_at`。架构统一为 Go 风格的 amd64 / arm64 等，Android ABI 名称会映射。设备 ID 在 Hub 配对时分配；不使用主机名、MAC 或硬件序列号生成身份。
 
 ## 能力状态
 
@@ -20,14 +20,14 @@ Schema 版本为 1，参考 [`schema.json`](../protocol/schema.json)。时间为
 
 | 模块 | 单位与语义 |
 |---|---|
-| cpu | 相邻累计时间差的整机百分比 0–100；per_core_percent 是每核百分比；首样本 warming_up |
+| cpu | 相邻累计时间差的整机百分比 0–100；per_core_percent 是最多前 256 核百分比，整机总量仍按所有核计算；首样本 warming_up |
 | memory | bytes；used=total−available；百分比由此计算；不同系统 available 的内核定义有差异 |
 | swap | bytes 和 percent；不存在 Swap 时总容量可为 0，不能等同采集失败 |
 | storage.volumes | 选定可访问卷的 bytes、容量 percent；名称为卷标签，不上报文件正文 |
 | storage.io | 逐块设备累计字节和 bytes/second；首速率 null；不把分区和父磁盘相加 |
 | network | 逐接口累计字节、bytes/second；总量是已提供接口之和，VPN／虚拟网卡可能重复计算同一业务流量，不等同互联网账单 |
 | system | OS、内核、架构、uptime_seconds；hostname 需双重同意；不采公网 IP |
-| processes | 可见范围内最多枚举 512 个，按驻留内存选前 20；CPU 按整机容量归一；不采命令行参数、环境变量或路径 |
+| processes | 可见范围内最多枚举 512 个，按驻留内存选前 20；CPU 按相邻进程 CPU 时间差／采样间隔／整机核数归一；首个进程基线为 null；不采命令行参数、环境变量或路径 |
 | battery | percent、on_battery；平台 API 没有数据时 unsupported |
 | sensors | 本版默认 unsupported；不伪造温度／GPU 读数 |
 

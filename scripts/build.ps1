@@ -1,4 +1,4 @@
-param([string]$Go='go',[string]$Inno='',[string]$Rsrc='rsrc')
+param([string]$Go='go',[string]$Inno='',[string]$Rsrc='rsrc',[string]$Python='python')
 $ErrorActionPreference='Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 New-Item -ItemType Directory -Force artifacts | Out-Null
@@ -18,6 +18,13 @@ try {
     Invoke-Build windows amd64 agent $true
     Invoke-Build windows amd64 hub
     foreach($arch in @('amd64','arm64')){Invoke-Build linux $arch agent;Invoke-Build linux $arch hub}
+    $oldBuildPath=$env:PATH
+    try {
+      $goPath=Split-Path -Parent (Get-Command $Go).Source
+      $env:PATH=$goPath+[IO.Path]::PathSeparator+$env:PATH
+      & $Python scripts/licenses.py
+      if($LASTEXITCODE -ne 0){throw 'License inventory failed'}
+    } finally {$env:PATH=$oldBuildPath}
     if($Inno){& $Inno deploy/windows/setup.iss;if($LASTEXITCODE -ne 0){throw 'Installer build failed'}}
 } finally {$env:GOOS=$oldOS;$env:GOARCH=$oldArch;$env:CGO_ENABLED=$oldCGO}
 $lines=Get-ChildItem artifacts -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name | ForEach-Object {('{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLower(),$_.Name)}

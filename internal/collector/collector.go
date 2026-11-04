@@ -27,21 +27,28 @@ type Options struct {
 	Scope     string
 	Volumes   []string
 }
+type processPoint struct {
+	seconds float64
+	at      time.Time
+	created int64
+}
 type Collector struct {
-	previousDisk map[string]disk.IOCountersStat
-	diskAt       time.Time
-	previousCPU  []cpu.TimesStat
-	previousNet  map[string]netstat.IOCountersStat
-	netAt        time.Time
-	processAt    time.Time
-	processData  any
-	opts         Options
+	previousProcesses map[int32]processPoint
+	previousDisk      map[string]disk.IOCountersStat
+	diskAt            time.Time
+	previousCPU       []cpu.TimesStat
+	previousNet       map[string]netstat.IOCountersStat
+	netAt             time.Time
+	processAt         time.Time
+	processData       any
+	opts              Options
 }
 
 func New(opts Options) *Collector { return &Collector{opts: opts} }
 func (c *Collector) Configure(opts Options) {
 	c.opts = opts
 	if !opts.Processes {
+		c.previousProcesses = nil
 		c.processData = nil
 		c.processAt = time.Time{}
 	}
@@ -83,12 +90,16 @@ func (c *Collector) Sample(ctx context.Context) map[string]protocol.Metric {
 			pa, pi := total(c.previousCPU[i])
 			a, b := all-pa, idle-pi
 			if a <= 0 {
-				cores = append(cores, 0)
+				if len(cores) < 256 {
+					cores = append(cores, 0)
+				}
 				continue
 			}
 			dt += a
 			di += b
-			cores = append(cores, max(0, min(100, (a-b)/a*100)))
+			if len(cores) < 256 {
+				cores = append(cores, max(0, min(100, (a-b)/a*100)))
+			}
 		}
 		if dt <= 0 {
 			out["cpu"] = block("warming_up", scope, at, nil)
@@ -219,8 +230,9 @@ func (c *Collector) Sample(ctx context.Context) map[string]protocol.Metric {
 				out["processes"] = failed(scope, at, err)
 			} else {
 				rows := []map[string]any{}
-				for _, p := range items {
-					if len(rows) >= 512 || ctx.Err() != nil {
+				nextProcesses := map[int32]processPoint{}
+				for index, p := range items {
+					if index >= 512 || ctx.Err() != nil {
 						break
 					}
 					name, err := p.NameWithContext(ctx)
@@ -234,12 +246,23 @@ func (c *Collector) Sample(ctx context.Context) map[string]protocol.Metric {
 					if err != nil {
 						continue
 					}
-					pct, err := p.CPUPercentWithContext(ctx)
-					if err != nil {
-						pct = 0
+					times, terr := p.TimesWithContext(ctx)
+					created, cerr := p.CreateTimeWithContext(ctx)
+					var pct any
+					cpuStatus := "warming_up"
+					if terr != nil || cerr != nil {
+						cpuStatus = "permission_denied"
+					} else {
+						seconds := times.User + times.System
+						if old, ok := c.previousProcesses[p.Pid]; ok && old.created == created && seconds >= old.seconds && at.After(old.at) {
+							pct = max(0, min(100, (seconds-old.seconds)/at.Sub(old.at).Seconds()/float64(max(1, len(c.previousCPU)))*100))
+							cpuStatus = "supported"
+						}
+						nextProcesses[p.Pid] = processPoint{seconds, at, created}
 					}
-					rows = append(rows, map[string]any{"pid": p.Pid, "name": name, "cpu_percent": max(0, min(100, pct/float64(runtime.NumCPU()))), "memory_bytes": m.RSS})
+					rows = append(rows, map[string]any{"pid": p.Pid, "name": name, "cpu_percent": pct, "cpu_status": cpuStatus, "memory_bytes": m.RSS})
 				}
+				c.previousProcesses = nextProcesses
 				slices.SortFunc(rows, func(a, b map[string]any) int {
 					am, bm := a["memory_bytes"].(uint64), b["memory_bytes"].(uint64)
 					if am > bm {

@@ -65,9 +65,28 @@ func values(v any, depth int) error {
 			if len(k) > 64 {
 				return errors.New("long key")
 			}
-			if n, ok := v.(float64); ok && (k == "percent" || k == "cpu_percent" || k == "per_core_percent") && (n < 0 || n > 100) {
-				return errors.New("percentage out of range")
+			if n, ok := v.(float64); ok {
+				if k == "temperature_celsius" {
+					if math.IsNaN(n) || math.IsInf(n, 0) || n < -273.15 || n > 1000 {
+						return errors.New("invalid temperature")
+					}
+					continue
+				}
+				if (k == "percent" || k == "cpu_percent") && (n < 0 || n > 100) {
+					return errors.New("percentage out of range")
+				}
 			}
+			if k == "per_core_percent" {
+				if list, ok := v.([]any); ok {
+					for _, item := range list {
+						n, ok := item.(float64)
+						if !ok || n < 0 || n > 100 {
+							return errors.New("invalid core percentage")
+						}
+					}
+				}
+			}
+
 			if err := values(v, depth+1); err != nil {
 				return err
 			}
@@ -86,7 +105,7 @@ func values(v any, depth int) error {
 			return errors.New("long value")
 		}
 	case float64:
-		if math.IsNaN(x) || math.IsInf(x, 0) || x < -273.15 || x > 9e18 {
+		if math.IsNaN(x) || math.IsInf(x, 0) || x < 0 || x > 9e18 {
 			return errors.New("invalid numeric value")
 		}
 	case nil, bool, int, int64, uint64:

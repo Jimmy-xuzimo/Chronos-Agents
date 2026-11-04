@@ -28,6 +28,11 @@ Name: "autostart"; Description: "登录 Windows 后自动运行"; Flags: checked
 [Files]
 Source: "..\..\artifacts\chronos-agent-windows-amd64.exe"; DestDir: "{app}"; DestName: "chronos-agent.exe"; Flags: ignoreversion restartreplace
 
+Source: "..\..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\NOTICE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\artifacts\third-party\*"; DestDir: "{app}\third-party"; Flags: ignoreversion recursesubdirs createallsubdirs
+
 [Icons]
 Name: "{autoprograms}\Chronos Agent"; Filename: "{app}\chronos-agent.exe"; Parameters: "--open"
 

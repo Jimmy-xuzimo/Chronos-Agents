@@ -22,6 +22,40 @@ for n,d in schema['$defs'].items():
  go.append('}');ts.append('}');kt.append('data class '+n+'(\n'+',\n'.join(fields)+'\n)')
 kt.append('object Wire { const val VERSION = 1; val statuses = setOf('+','.join('"'+v+'"' for v in schema['$defs']['Metric']['properties']['status']['enum'])+') }')
 api={'openapi':'3.1.0','info':{'title':'Chronos Agents API','version':'0.1.0'},'components':{'schemas':schema['$defs'],'securitySchemes':{'device':{'type':'http','scheme':'bearer'},'reader':{'type':'http','scheme':'bearer'}}},'paths':{'/api/v1/ingest':{'post':{'security':[{'device':[]}],'requestBody':{'required':True,'content':{'application/json':{'schema':{'$ref':'#/components/schemas/Envelope'}}}},'responses':{'202':{'description':'Accepted or duplicate'},'401':{'description':'Revoked or invalid device credential'},'422':{'description':'Invalid telemetry'}}}}}}
+api['components']['securitySchemes']['session']={'type':'apiKey','in':'cookie','name':'chronos_session_<origin-hash>','description':'Cookie name is derived from the exact origin. Obtain through setup/login.'}
+def operation(summary,security=None,properties=None,required=None):
+ op={'summary':summary,'responses':{'200':{'description':'Successful response'},'400':{'description':'Invalid request'},'401':{'description':'Authentication required'},'403':{'description':'Scope, origin or CSRF rejected'},'429':{'description':'Rate limited; honor Retry-After seconds'}}}
+ if security is not None:op['security']=security
+ if properties is not None:op['requestBody']={'required':True,'content':{'application/json':{'schema':{'type':'object','additionalProperties':False,'properties':properties,'required':required or []}}}}
+ return op
+text={'type':'string'}
+for path,description in [('/healthz','Process health'),('/api/info','Service role and version'),('/api/session','Browser session state and CSRF token')]:
+ api['paths'][path]={'get':operation(description)}
+for path in ['/api/setup','/api/login']:
+ api['paths'][path]={'post':operation('Initialize once or authenticate browser',properties={'password':text,'bootstrap':text,'totp':text},required=['password'])}
+api['paths']['/api/logout']={'post':operation('Revoke current browser session',[{'session':[]}])}
+api['paths']['/api/v1/enroll']={'post':operation('Consume one-time pairing code; returns device_id and write-only token',properties={'code':text},required=['code'])}
+api['paths']['/api/v1/policy']={'get':operation('Read only this device policy',[{'device':[]}])}
+api['paths']['/api/v1/rotate']={'post':operation('Rotate this device credential; old token valid for ten minutes',[{'device':[]}])}
+api['paths']['/api/v1/devices']={'get':operation('Read latest devices, restricted by reader device IDs',[{'reader':[]},{'session':[]}])}
+history=operation('Bounded minute history; no process payloads',[{'reader':[]},{'session':[]}])
+history['parameters']=[{'in':'query','name':'device','required':True,'schema':text},{'in':'query','name':'range','schema':{'type':'string','enum':['1h','24h','7d','30d'],'default':'1h'}}]
+api['paths']['/api/v1/history']={'get':history}
+admin={
+ '/api/admin/pair':('Create or repair device pairing',{'name':text,'kind':{'type':'string','enum':['windows','linux','nas','macos','android']},'id':text}),
+ '/api/admin/revoke':('Revoke current, previous and pending device credentials',{'id':text}),
+ '/api/admin/policy':('Set interval and allowed switches only',{'id':text,'policy':{'$ref':'#/components/schemas/Policy'}}),
+ '/api/admin/readers':('Create a scoped reader or revoke by reader ID',{'name':text,'devices':{'type':'array','items':text},'revoke':text}),
+ '/api/admin/retention':('Configure bounded retention',{'raw_hours':{'type':'integer'},'minute_days':{'type':'integer'},'audit_days':{'type':'integer'}}),
+ '/api/admin/account':('Reauthenticate to change password or TOTP',{'password':text,'totp':text,'action':{'type':'string','enum':['password','totp_prepare','totp_enable','totp_disable']},'new_password':text,'secret':text}),
+}
+for path,(description,props) in admin.items():
+ op=operation(description,[{'session':[]}],props)
+ op['parameters']=[{'in':'header','name':'X-CSRF-Token','required':True,'schema':text},{'in':'header','name':'Origin','required':True,'schema':text}]
+ api['paths'][path]={'post':op}
+for path in ['/api/admin/readers','/api/admin/retention','/api/admin/audit']:
+ api['paths'].setdefault(path,{})['get']=operation('Read private administration data',[{'session':[]}])
+
 def refs(v):
  if isinstance(v,dict):return {k:(x.replace('#/$defs/','#/components/schemas/') if k=='$ref' else refs(x)) for k,x in v.items()}
  if isinstance(v,list):return [refs(x) for x in v]

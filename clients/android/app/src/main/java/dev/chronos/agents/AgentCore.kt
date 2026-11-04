@@ -159,6 +159,15 @@ object WireJson {
             )
 }
 
+private fun architecture(): String =
+    when (val value = Build.SUPPORTED_ABIS.firstOrNull()) {
+        "arm64-v8a" -> "arm64"
+        "armeabi-v7a" -> "arm"
+        "x86_64" -> "amd64"
+        "x86" -> "386"
+        else -> value ?: "unknown"
+    }
+
 object Sampler {
     private val session = UUID.randomUUID().toString()
     private val seq = AtomicLong()
@@ -272,7 +281,7 @@ object Sampler {
                                 .put("os_name", "Android " + Build.VERSION.RELEASE)
                                 .put(
                                     "architecture",
-                                    Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown",
+                                    architecture(),
                                 ),
                     ),
                 "processes" to block("unsupported"),
@@ -296,7 +305,7 @@ object Sampler {
             seq.incrementAndGet(),
             now,
             interval,
-            Platform("android", Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown", ""),
+            Platform("android", architecture(), ""),
             metrics,
         )
     }
