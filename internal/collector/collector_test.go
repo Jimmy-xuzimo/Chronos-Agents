@@ -34,3 +34,16 @@ func TestRealSampleHasHonestCapabilitiesAndNoDefaultPrivateFields(t *testing.T) 
 		t.Fatal("first network sample has fabricated rate")
 	}
 }
+
+func TestContainerScopeDoesNotFabricateHostAsCgroupCounters(t *testing.T) {
+	c := New(Options{Scope: "container"})
+	metrics := c.Sample(context.Background())
+	for _, name := range []string{"cpu", "memory", "swap", "system", "processes"} {
+		if metrics[name].Status != "unsupported" || metrics[name].Data != nil {
+			t.Fatal("host data mislabeled as container")
+		}
+	}
+	if metrics["storage"].Scope != "accessible_storage" {
+		t.Fatal("filesystem capacity is not container quota")
+	}
+}

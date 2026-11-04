@@ -77,6 +77,9 @@ func (c *Collector) Sample(ctx context.Context) map[string]protocol.Metric {
 		scope = "host"
 	}
 	out := map[string]protocol.Metric{}
+	if scope == "container" {
+		return c.containerSample(ctx, at)
+	}
 	times, e := cpu.TimesWithContext(ctx, true)
 	if e != nil {
 		out["cpu"] = failed(scope, at, e)
@@ -361,4 +364,33 @@ func (c *Collector) diskIO(ctx context.Context, at time.Time, scope string) map[
 		status = "unsupported"
 	}
 	return map[string]any{"status": status, "scope": scope, "items": items}
+}
+
+// Pure container mode does not substitute host /proc counters for cgroup limits.
+// Host monitoring is provided only by the explicit read-only host-mount profile.
+func (c *Collector) containerSample(ctx context.Context, at time.Time) map[string]protocol.Metric {
+	out := map[string]protocol.Metric{}
+	for _, name := range []string{"cpu", "memory", "swap", "network", "system", "processes", "battery", "sensors"} {
+		out[name] = block("unsupported", "container", at, nil)
+	}
+	paths := c.opts.Volumes
+	if len(paths) == 0 {
+		paths = []string{"/"}
+	}
+	volumes := []map[string]any{}
+	for _, path := range paths {
+		if len(volumes) >= 32 || ctx.Err() != nil {
+			break
+		}
+		d, err := disk.UsageWithContext(ctx, path)
+		if err == nil {
+			volumes = append(volumes, map[string]any{"name": filepath.Base(path), "total_bytes": d.Total, "used_bytes": d.Used, "available_bytes": d.Free, "percent": d.UsedPercent})
+		}
+	}
+	if len(volumes) == 0 {
+		out["storage"] = block("unsupported", "accessible_storage", at, nil)
+	} else {
+		out["storage"] = block("supported", "accessible_storage", at, map[string]any{"volumes": volumes, "io": map[string]any{"status": "unsupported", "scope": "container", "items": []any{}}})
+	}
+	return out
 }

@@ -44,6 +44,10 @@ jobs:
           go install github.com/akavel/rsrc@v0.10.2
           $rsrc=Join-Path (go env GOPATH) 'bin/rsrc.exe'
           ./scripts/build.ps1 -Rsrc $rsrc -Inno 'C:/Program Files (x86)/Inno Setup 6/ISCC.exe'
+      - name: Verify isolated install upgrade and uninstall
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/test_install.ps1
       - name: Build unsigned macOS application and test Keychain helper
         if: runner.os == 'macOS'
         shell: bash

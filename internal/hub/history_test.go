@@ -105,3 +105,33 @@ func TestStoragePressureRejectsWithoutLosingExistingData(t *testing.T) {
 		t.Fatal("storage recovery failed")
 	}
 }
+
+func TestPrivacyPolicyPreservesUnavailableStatusAndFiltersSystemHostname(t *testing.T) {
+	f := newFixture(t)
+	id, token := f.pair(t)
+	e := sample(id, 1)
+	p := e.Metrics["processes"]
+	p.Status = "unsupported"
+	p.Data = nil
+	e.Metrics["processes"] = p
+	system := e.Metrics["cpu"]
+	system.Data = map[string]any{"hostname": "fictional-private-host"}
+	e.Metrics["system"] = system
+	if response := f.req("POST", "/api/v1/ingest", e, token); response.Code != 202 {
+		t.Fatal("sample rejected")
+	}
+	devices, err := f.s.Devices()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, d := range devices {
+		if d.ID == id {
+			if d.Latest.Metrics["processes"].Status != "unsupported" {
+				t.Fatal("unsupported confused with disabled")
+			}
+			if _, ok := d.Latest.Metrics["system"].Data["hostname"]; ok {
+				t.Fatal("system hostname leaked")
+			}
+		}
+	}
+}

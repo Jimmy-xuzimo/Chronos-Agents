@@ -33,6 +33,10 @@ Schema 版本为 1，参考 [`schema.json`](../protocol/schema.json)。时间为
 
 进程采样缓存一分钟，模块记录自己的 collected_at；低频扩展与基础速率不使用同一更新时间伪装。网络地址默认关闭，即便开启也不包含凭据；Docker 宿主视角无法可靠读取地址时显式 unsupported。
 
+## Docker 的宿主与隔离容器
+
+推荐的 NAS 只读宿主挂载配置提供 host 指标。若明确选择纯 `--scope container`，本版尚无 cgroup / 命名空间资源统计实现，CPU、内存、Swap、网络、系统、进程和电池均标为 unsupported；只报告可访问文件系统容量。不会把容器看到的宿主 `/proc` 总量当成容器配额。Docker Desktop 也不因此获得 Windows / macOS 物理主机数据。
+
 ## Android 差异
 
 Android 的 memory 使用 ActivityManager；storage 仅为应用数据所在分区可访问容量。整机 CPU、Swap、其他应用进程与传感器模块不提供。TrafficStats 可用时上报整机计数，否则退回自身 UID，并标记 app 范围；范围变化时必须重新建立速率基线。电池来自系统粘性广播。

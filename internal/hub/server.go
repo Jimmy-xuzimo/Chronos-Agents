@@ -155,7 +155,7 @@ func (h *Server) device(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !policy.Processes {
-			if m, ok := sample.Metrics["processes"]; ok {
+			if m, ok := sample.Metrics["processes"]; ok && m.Status == "supported" {
 				m.Status = "disabled"
 				m.Data = nil
 				sample.Metrics["processes"] = m
@@ -163,10 +163,17 @@ func (h *Server) device(w http.ResponseWriter, r *http.Request) {
 		}
 		if !policy.Hostname {
 			sample.Platform.Hostname = ""
+			if system, ok := sample.Metrics["system"]; ok && system.Data != nil {
+				delete(system.Data, "hostname")
+				sample.Metrics["system"] = system
+			}
 		}
 		if !policy.Addresses {
 			if m, ok := sample.Metrics["network"]; ok && m.Data != nil {
 				delete(m.Data, "addresses")
+				if m.Data["addresses_status"] == "supported" {
+					m.Data["addresses_status"] = "disabled"
+				}
 				if items, ok := m.Data["interfaces"].([]any); ok {
 					for _, item := range items {
 						if row, ok := item.(map[string]any); ok {

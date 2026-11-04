@@ -18,20 +18,30 @@
 | Android 构建 | Debug 与独立私钥签名 Release APK 构建、Lint 通过；警告不冒称为零 |
 | Android 设备测试 | 独立 Android 16 模拟器 4 项通过：Keystore 加解密／非明文文件、能力 null、暂停不请求、HTTPS 根地址限制 |
 | 工作台适配 | Python 4 项映射测试通过：缺失值、HTTPS／稳定绑定、绑定丢失占位和缓存复用 |
-| Windows 安装器 | Inno Setup 成功生成当前用户安装包；未自动覆盖或替换现有采集器 |
+| Windows 安装器 | 独立目录安装、运行、关闭占用进程升级、配置哈希保持、卸载与注册表清理均通过；旧采集器未替换 |
 | Linux 构建 | amd64 / arm64 静态交叉编译通过；不等于 NAS 宿主运行测试 |
 
 浏览器联调发现并修复了同一 localhost 不同端口 Cookie 冲突；新会话名称按 origin 隔离。重试期间的唤醒保护和缺失值独立计数均加入回归测试。
+
+## NAS 与云端补充验证
+
+2026-11-05，在独立 fnOS x64 测试项目验证：用户 OAuth 授权、镜像导入、非 root 服务、只读根、丢弃 capabilities、HTTPS 与专用 CA、宿主 CPU / 内存、指定卷容量、默认关闭主机名／进程、历史保存和 Hub 重启恢复。暂停后不采样、恢复上传与撤销后停止上传均通过。该测试未替换现有 NAS 采集器。
+
+首个完整云端验证 [run 41873816670](https://github.com/Jimmy-xuzimo/Chronos-Agents/actions/runs/41873816670) 在构建 `5aacda7` 全部通过：Windows、Linux（含 race detector）、macOS ARM / Intel（含 Keychain helper 往返）、Android 严格依赖验证及 Docker 双架构构建。macOS 桌面 GUI 和 ARM 实机仍不由编译／CI 代替。
+
+后续仅涉及安装器升级处理、保守容器能力语义、隐私过滤和发行审查；发行前再次执行相应检查，最终 run 另见 Release。
 
 ## 短时资源采样
 
 隔离 Windows headless Agent 在正常十秒采样周期下，单次约 10 秒观察：Working Set 23.93 MiB、Private Bytes 57.42 MiB。该窗口累计 CPU 低于计时分辨率，**不能据此声称零 CPU**。这是程序进程的短时记录，不包含打开管理页的浏览器、系统 WMI 服务或所有峰值。
 
+NAS 短时容器平台读数：Agent 约 39.93 MiB、Hub 约 38.25 MiB；同样不把瞬时 CPU 读数当作长期结论。
+
 仍需在约定硬件上完成空闲／断网／暂停／高进程数量及多小时运行对比；Hub 三／二十／一百台模拟设备的持续吞吐、存储增长和内存峰值尚未形成性能结论。
 
 ## 待验证或发行限制
 
-- Linux Docker 的实际运行、NAS 指定卷、混合磁盘、只读权限及系统重启后恢复。
+- NAS 系统重启、混合磁盘和长时间运行；基本非 root / 只读根容器、宿主采样、TLS、独立卷和 Hub 重启持久化已完成真机验证。
 - macOS Intel／Apple Silicon 本机托盘、Keychain 与登录启动；由各自 CI 构建后仍需用户实机验证。
 - Windows 安装、升级、卸载完整闭环、不同用户、系统启动和睡眠恢复；未替换已有软件进行测试。
 - Android 真机 Doze、厂商省电、长期后台、密钥失效、切网和低电量；模拟器测试不覆盖厂商行为。
