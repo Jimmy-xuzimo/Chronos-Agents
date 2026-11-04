@@ -1,0 +1,27 @@
+[Unit]
+Description=Chronos telemetry agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=chronos-agent
+Group=chronos-agent
+StateDirectory=chronos-agent
+StateDirectoryMode=0700
+ExecStart=/usr/local/bin/chronos-agent --headless --data /var/lib/chronos-agent
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+RestrictSUIDSGID=true
+LockPersonality=true
+UMask=0077
+# Do not hide /proc: basic host counters need read access. Process details remain
+# opt-in and inaccessible system processes are skipped without elevation.
+
+[Install]
+WantedBy=multi-user.target

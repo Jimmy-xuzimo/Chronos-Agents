@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Chronos Agents</title>
+    <link rel="icon" href="/logo.svg" />
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <a class="brand" href="/"
+          ><img src="/logo.svg" width="40" height="40" alt="" /><span
+            ><b>Chronos Agents</b
+            ><small id="role-label">设备采集与接收中心</small></span
+          ></a
+        >
+        <div>
+          <span id="connection" class="badge">连接中</span
+          ><button id="logout" hidden>退出登录</button>
+        </div>
+      </header>
+      <p id="notice" role="status" hidden></p>
+      <section id="auth" class="glass auth" hidden>
+        <span class="eyebrow">YOUR DEVICES. YOUR SPACE.</span>
+        <h1 id="auth-title">回到设备工作空间。</h1>
+        <p id="auth-help">使用本服务的管理密码登录。</p>
+        <form id="login">
+          <label id="bootstrap-label" hidden
+            >一次性初始化凭据<input
+              id="bootstrap"
+              autocomplete="off"
+              spellcheck="false" /></label
+          ><label
+            >管理密码<input
+              id="password"
+              type="password"
+              minlength="12"
+              maxlength="256"
+              autocomplete="current-password"
+              required /></label
+          ><label id="totp-label"
+            >两步验证码（启用时填写）<input
+              id="totp"
+              inputmode="numeric"
+              maxlength="6"
+              autocomplete="one-time-code" /></label
+          ><button class="primary" type="submit" id="login-submit">
+            进入管理
+          </button>
+        </form>
+        <small
+          >首次凭据位于私有配置目录的 bootstrap-secret
+          文件中。没有通用默认密码。</small
+        >
+      </section>
+      <div id="workspace" hidden>
+        <nav id="hub-nav" hidden aria-label="管理页面">
+          <button data-page="devices" class="selected">设备总览</button
+          ><button data-page="connections">接入与权限</button
+          ><button data-page="history">历史与状态</button
+          ><button data-page="settings">安全与保留</button>
+        </nav>
+        <section id="hub-devices" class="page" hidden>
+          <div class="heading">
+            <div>
+              <span class="eyebrow">FLEET OVERVIEW</span>
+              <h1>设备，各就各位。</h1>
+              <p id="fleet-summary">等待设备上报</p>
+            </div>
+            <button class="primary" id="new-device">添加设备</button>
+          </div>
+          <div id="devices" class="device-grid"></div>
+        </section>
+        <section id="hub-connections" class="page" hidden>
+          <div class="heading">
+            <div>
+              <h1>连接，边界清楚。</h1>
+              <p>设备凭据只写本设备；工作台连接只读所选设备。</p>
+            </div>
+          </div>
+          <div class="two-col">
+            <article class="glass">
+              <h2>创建设备配对</h2>
+              <form id="pair-form">
+                <label
+                  >设备名称<input
+                    id="device-name"
+                    maxlength="80"
+                    required
+                    placeholder="例如：家庭 NAS" /></label
+                ><label
+                  >设备类型<select id="device-kind">
+                    <option value="nas">NAS / Docker</option>
+                    <option value="windows">Windows</option>
+                    <option value="linux">Linux</option>
+                    <option value="macos">macOS</option>
+                    <option value="android">Android</option>
+                  </select></label
+                ><button class="primary">生成一次性配对信息</button>
+              </form>
+              <p class="muted">
+                10 分钟内有效，成功使用一次后失效。不要把配对信息放入公开截图。
+              </p>
+            </article>
+            <article class="glass">
+              <h2>工作台只读连接</h2>
+              <form id="reader-form">
+                <label
+                  >连接名称<input
+                    id="reader-name"
+                    maxlength="80"
+                    required
+                    placeholder="我的工作台"
+                /></label>
+                <fieldset>
+                  <legend>允许读取的设备</legend>
+                  <div id="reader-scopes"></div>
+                </fieldset>
+                <button class="primary">生成只读凭据</button>
+              </form>
+              <div id="readers"></div>
+            </article>
+          </div>
+        </section>
+        <section id="hub-history" class="page" hidden>
+          <div class="heading">
+            <div>
+              <h1>过去，也有迹可循。</h1>
+              <p>历史保留采样时刻。进程列表默认不写入历史。</p>
+            </div>
+          </div>
+          <article class="glass">
+            <div class="filters">
+              <label>设备<select id="history-device"></select></label
+              ><label
+                >范围<select id="history-range">
+                  <option value="1h">最近 1 小时</option>
+                  <option value="24h" selected>最近 24 小时</option>
+                  <option value="7d">最近 7 天</option>
+                  <option value="30d">最近 30 天</option>
+                </select></label
+              ><button id="load-history">读取历史</button>
+            </div>
+            <div id="history-chart" class="chart"></div>
+            <p id="history-info"></p>
+          </article>
+          <article class="glass">
+            <h2>最近操作审计</h2>
+            <div id="audit"></div>
+          </article>
+        </section>
+        <section id="hub-settings" class="page" hidden>
+          <div class="heading">
+            <div>
+              <h1>安全，从默认开始。</h1>
+              <p>不回显设备 Token，不把凭据放在日志或导出中。</p>
+            </div>
+          </div>
+          <div class="two-col">
+            <article class="glass">
+              <h2>数据保留</h2>
+              <form id="retention-form">
+                <label
+                  >原始样本 / 小时<input
+                    id="raw-hours"
+                    type="number"
+                    min="1"
+                    max="168"
+                    required /></label
+                ><label
+                  >分钟汇总 / 天<input
+                    id="minute-days"
+                    type="number"
+                    min="1"
+                    max="365"
+                    required /></label
+                ><label
+                  >审计记录 / 天<input
+                    id="audit-days"
+                    type="number"
+                    min="1"
+                    max="365"
+                    required /></label
+                ><button class="primary">保存保留期限</button>
+              </form>
+            </article>
+            <article class="glass">
+              <h2>账号与两步认证</h2>
+              <form id="account-form">
+                <label
+                  >当前密码<input
+                    id="old-password"
+                    type="password"
+                    autocomplete="current-password"
+                    required /></label
+                ><label
+                  >当前两步验证码<input
+                    id="old-totp"
+                    inputmode="numeric"
+                    maxlength="6"
+                    autocomplete="one-time-code" /></label
+                ><label
+                  >新密码<input
+                    id="new-password"
+                    type="password"
+                    minlength="12"
+                    autocomplete="new-password" /></label
+                ><button class="primary">修改密码并退出所有会话</button>
+              </form>
+              <div class="actions">
+                <button id="totp-prepare">配置两步认证</button
+                ><button id="totp-disable">停用两步认证</button>
+              </div>
+              <p id="mfa-status" class="muted"></p>
+            </article>
+          </div>
+        </section>
+        <section id="local" hidden>
+          <div class="heading compact">
+            <div>
+              <h1>设备脉搏，轻量连接。</h1>
+              <p id="local-state">等待连接</p>
+            </div>
+            <button id="upload-now" class="primary">立即采样并上传</button>
+          </div>
+          <div class="stats">
+            <article class="glass">
+              <small>CPU</small><strong id="cpu">—</strong>
+            </article>
+            <article class="glass">
+              <small>内存</small><strong id="memory">—</strong>
+            </article>
+            <article class="glass">
+              <small>网络下载</small><strong id="network">—</strong>
+            </article>
+          </div>
+          <div class="two-col">
+            <article class="glass">
+              <h2>连接接收中心</h2>
+              <form id="enroll-form">
+                <label
+                  >Hub HTTPS 地址<input
+                    id="hub-origin"
+                    type="url"
+                    placeholder="https://hub.example.com"
+                    required /></label
+                ><label
+                  >一次性配对码<input
+                    id="pair-code"
+                    autocomplete="off"
+                    spellcheck="false"
+                    required
+                /></label>
+                <details>
+                  <summary>私有 CA（可选）</summary>
+                  <label
+                    >明确导入的 PEM CA 证书<textarea
+                      id="ca-pem"
+                      rows="4"
+                      maxlength="65536"
+                      placeholder="-----BEGIN CERTIFICATE-----"
+                    ></textarea>
+                  </label>
+                </details>
+                <button class="primary">配对并保存凭据</button>
+              </form>
+              <p id="local-binding" class="muted"></p>
+              <div class="actions">
+                <button id="rotate">轮换设备凭据</button
+                ><button id="forget" class="danger">断开本机连接</button>
+              </div>
+            </article>
+            <article class="glass">
+              <h2>采集控制</h2>
+              <form id="local-config">
+                <div class="filters">
+                  <label
+                    >间隔 / 秒<input
+                      id="interval"
+                      type="number"
+                      min="10"
+                      max="300"
+                      required /></label
+                  ><label
+                    >超时 / 秒<input
+                      id="timeout"
+                      type="number"
+                      min="5"
+                      max="60"
+                      required
+                  /></label>
+                </div>
+                <label class="check"
+                  ><input type="checkbox" id="paused" />暂停采样与上传</label
+                ><label class="check"
+                  ><input type="checkbox" id="battery" />电池供电时暂停</label
+                ><label class="check"
+                  ><input
+                    type="checkbox"
+                    id="processes"
+                  />允许上传进程明细</label
+                ><label class="check"
+                  ><input
+                    type="checkbox"
+                    id="addresses"
+                  />允许上传网络地址</label
+                ><label class="check"
+                  ><input type="checkbox" id="hostname" />允许上传主机名</label
+                ><button class="primary">保存采集设置</button>
+              </form>
+              <p id="local-policy" class="muted"></p>
+              <p id="local-security" class="muted"></p>
+            </article>
+          </div>
+          <article class="glass">
+            <div class="heading">
+              <h2>指标来源与能力</h2>
+              <button id="show-sample">查看本次样本</button>
+            </div>
+            <div id="capabilities"></div>
+            <pre id="sample" hidden></pre>
+          </article>
+        </section>
+      </div>
+      <footer>
+        Chronos Agents · 0.1.0
+        <span>固定彩色 / 按权限采集 / HTTPS 主动上报</span>
+      </footer>
+    </main>
+    <dialog id="modal">
+      <div class="modal-heading">
+        <h2 id="modal-title"></h2>
+        <button id="close-modal" aria-label="关闭">✕</button>
+      </div>
+      <div id="modal-body"></div>
+    </dialog>
+  </body>
+</html>

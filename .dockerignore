@@ -1,0 +1,10 @@
+.git
+.runtime
+.data
+artifacts
+clients
+**/node_modules
+**/build
+**/*.secret
+**/*.key
+.env

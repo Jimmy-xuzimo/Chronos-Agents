@@ -1,0 +1,36 @@
+# Linux/NAS only. Docker Desktop cannot measure the Windows/macOS host.
+# Host networking makes the management listener genuinely loopback-only and
+# exposes no LAN port. See DEPLOYMENT.md for authenticated HTTPS LAN access.
+services:
+  agent:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+      args: {COMPONENT: agent}
+    image: chronos-agent:local
+    network_mode: host
+    user: "10001:10001"
+    command: ["--headless", "--data", "/data", "--listen", "127.0.0.1:17860", "--origin", "http://127.0.0.1:17860", "--scope", "host", "--volumes", "/host/data"]
+    environment:
+      HOST_PROC: /host/proc
+      HOST_SYS: /host/sys
+    volumes:
+      - agent-data:/data
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - ${CHRONOS_VOLUME_PATH:?Choose an existing data volume path}:/host/data:ro
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ["/tmp:size=8m,noexec,nosuid,nodev"]
+    mem_limit: 128m
+    pids_limit: 64
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/chronos", "--healthcheck", "--listen", "127.0.0.1:17860"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+volumes:
+  agent-data:

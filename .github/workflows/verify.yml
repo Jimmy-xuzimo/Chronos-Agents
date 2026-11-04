@@ -1,0 +1,113 @@
+name: Verify and build
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  core:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-2025, macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check generated models and public sources
+        run: |
+          python scripts/generate_protocol.py --check
+          python scripts/check_public.py
+          python -m unittest discover -s adapters/chronos-monitoring -p "test_*.py"
+      - run: go test ./...
+      - run: go vet ./...
+      - name: Race detection
+        if: runner.os == 'Linux'
+        run: go test -race ./internal/agent ./internal/hub ./internal/security
+      - name: Dependency license inventory
+        run: python scripts/licenses.py
+      - name: Build Windows and Linux artifacts
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          go install github.com/akavel/rsrc@v0.10.2
+          $rsrc=Join-Path (go env GOPATH) 'bin/rsrc.exe'
+          ./scripts/build.ps1 -Rsrc $rsrc -Inno 'C:/Program Files (x86)/Inno Setup 6/ISCC.exe'
+      - name: Build unsigned macOS application and test Keychain helper
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          sh deploy/macos/build.sh
+          helper="artifacts/macos-$(go env GOARCH)/Chronos Agent.app/Contents/MacOS/chronos-keychain"
+          printf '%s' 'fictional-ci-keychain-test' | "$helper" save ci-ephemeral
+          test "$("$helper" read ci-ephemeral)" = 'fictional-ci-keychain-test'
+          "$helper" delete ci-ephemeral
+          tar -czf "artifacts/chronos-agent-macos-$(go env GOARCH)-unsigned.tar.gz" -C "artifacts/macos-$(go env GOARCH)" 'Chronos Agent.app'
+      - uses: actions/upload-artifact@v4
+        if: runner.os != 'Linux'
+        with:
+          name: native-${{ matrix.os }}
+          path: |
+            artifacts/chronos-*
+            artifacts/Chronos-*
+            artifacts/SHA256SUMS.txt
+            artifacts/third-party/
+          retention-days: 14
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: clients/android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - name: Install SDK
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0'
+      - name: Build and lint with dependency verification
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest :app:lintDebug :app:exportRuntimeInventory --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-development
+          path: |
+            clients/android/app/build/outputs/apk/debug/*.apk
+            clients/android/app/build/reports/lint-results-debug.*
+            artifacts/android-dependencies.json
+          retention-days: 14
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build both containers
+        run: |
+          docker build -f deploy/docker/Dockerfile --build-arg COMPONENT=agent -t chronos-agent:test .
+          docker build -f deploy/docker/Dockerfile --build-arg COMPONENT=hub -t chronos-hub:test .
+      - name: Verify restricted NAS container starts and management requires login
+        run: |
+          mkdir -p /tmp/chronos-test-volume
+          docker run -d --name agent --network host --cap-drop ALL --security-opt no-new-privileges --read-only --tmpfs /tmp:rw,noexec,size=8m -e HOST_PROC=/host/proc -e HOST_SYS=/host/sys -v /proc:/host/proc:ro -v /sys:/host/sys:ro -v /tmp/chronos-test-volume:/host/data:ro -v agent-test-data:/data chronos-agent:test --headless --data /data --volumes /host/data
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:17860/healthz && break || sleep 1; done
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17860/api/local/status)" = 401
+          docker exec agent /usr/local/bin/chronos --healthcheck
+          test "$(docker exec agent id -u)" = 10001
+      - name: Cleanup
+        if: always()
+        run: docker rm -f agent || true

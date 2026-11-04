@@ -1,0 +1,26 @@
+# Set HUB_ORIGIN and provide a certificate matching its DNS name.
+services:
+  hub:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+      args: {COMPONENT: hub}
+    image: chronos-hub:local
+    command: ["--data", "/data", "--listen", "0.0.0.0:17870", "--origin", "${HUB_ORIGIN:?Set HTTPS Hub origin}", "--tls-cert", "/certs/fullchain.pem", "--tls-key", "/certs/privkey.pem"]
+    ports: ["${HUB_BIND_IP:-127.0.0.1}:17870:17870"]
+    volumes: ["hub-data:/data", "./certs:/certs:ro"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: ["/tmp:size=16m,noexec,nosuid,nodev"]
+    mem_limit: 384m
+    pids_limit: 64
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/chronos", "--healthcheck", "--listen", "127.0.0.1:17870"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+volumes:
+  hub-data:

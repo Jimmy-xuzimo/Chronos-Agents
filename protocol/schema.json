@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/chronos/telemetry-v1.schema.json",
+  "title": "Chronos telemetry v1",
+  "$ref": "#/$defs/Envelope",
+  "$defs": {
+    "Platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "arch"
+      ],
+      "properties": {
+        "os": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "hostname": {
+          "type": "string"
+        }
+      }
+    },
+    "Metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "scope",
+        "collected_at",
+        "data"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "supported",
+            "warming_up",
+            "unsupported",
+            "disabled",
+            "permission_denied",
+            "error"
+          ]
+        },
+        "scope": {
+          "type": "string"
+        },
+        "collected_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "data": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      }
+    },
+    "Envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "device_id",
+        "agent_version",
+        "session_id",
+        "sequence",
+        "sampled_at",
+        "expected_interval_seconds",
+        "platform",
+        "metrics"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "device_id": {
+          "type": "string"
+        },
+        "agent_version": {
+          "type": "string"
+        },
+        "session_id": {
+          "type": "string"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "sampled_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expected_interval_seconds": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 86400
+        },
+        "platform": {
+          "$ref": "#/$defs/Platform"
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Metric"
+          }
+        }
+      }
+    },
+    "Policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interval",
+        "processes",
+        "addresses",
+        "hostname",
+        "paused"
+      ],
+      "properties": {
+        "interval": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 86400,
+          "x-go-type": "int"
+        },
+        "processes": {
+          "type": "boolean"
+        },
+        "addresses": {
+          "type": "boolean"
+        },
+        "hostname": {
+          "type": "boolean"
+        },
+        "paused": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
