@@ -430,9 +430,14 @@ func (h *Server) admin(w http.ResponseWriter, r *http.Request) {
 			security.Error(w, 400, "invalid_retention")
 			return
 		}
+		values := map[string]string{}
 		for key, value := range map[string]int{"raw_hours": req.Raw, "minute_days": req.Minutes, "audit_days": req.Audit} {
 			raw, _ := json.Marshal(value)
-			_ = s.Set(key, string(raw))
+			values[key] = string(raw)
+		}
+		if s.SetMany(values) != nil {
+			security.Error(w, 500, "storage_error")
+			return
 		}
 		s.Audit("retention_updated", "")
 		security.JSON(w, 200, map[string]bool{"ok": true})
@@ -478,7 +483,10 @@ func (h *Server) admin(w http.ResponseWriter, r *http.Request) {
 				security.Error(w, 400, "password_length")
 				return
 			}
-			_ = s.Set("admin_password", hash)
+			if s.Set("admin_password", hash) != nil {
+				security.Error(w, 500, "storage_error")
+				return
+			}
 			h.Gate.RevokeSessions()
 		case "totp_prepare":
 			security.JSON(w, 200, map[string]string{"secret": security.TOTPSecret()})
@@ -488,10 +496,16 @@ func (h *Server) admin(w http.ResponseWriter, r *http.Request) {
 				security.Error(w, 400, "totp_verification_failed")
 				return
 			}
-			_ = s.Set("totp", req.Secret)
+			if s.Set("totp", req.Secret) != nil {
+				security.Error(w, 500, "storage_error")
+				return
+			}
 			h.Gate.RevokeSessions()
 		case "totp_disable":
-			_ = s.Set("totp", "")
+			if s.Set("totp", "") != nil {
+				security.Error(w, 500, "storage_error")
+				return
+			}
 			h.Gate.RevokeSessions()
 		default:
 			security.Error(w, 400, "invalid_action")

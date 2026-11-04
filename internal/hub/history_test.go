@@ -135,3 +135,23 @@ func TestPrivacyPolicyPreservesUnavailableStatusAndFiltersSystemHostname(t *test
 		}
 	}
 }
+
+func TestSettingsWriteFailureDoesNotClaimSuccessOrRevokeSession(t *testing.T) {
+	f := newFixture(t)
+	if _, err := f.s.DB.Exec("PRAGMA query_only=ON"); err != nil {
+		t.Fatal(err)
+	}
+	defer f.s.DB.Exec("PRAGMA query_only=OFF")
+	if response := f.req("POST", "/api/admin/settings", map[string]int{"raw_hours": 12, "minute_days": 14, "audit_days": 30}, ""); response.Code != 500 {
+		t.Fatal("failed settings write claimed success")
+	}
+	if response := f.req("POST", "/api/admin/account", map[string]string{"password": "fictional-admin-password", "new_password": "fictional-new-password", "action": "password"}, ""); response.Code != 500 {
+		t.Fatal("failed password write claimed success")
+	}
+	if response := f.req("GET", "/api/v1/devices", nil, ""); response.Code != 200 {
+		t.Fatal("failed write revoked valid session")
+	}
+	if value := f.s.Get("raw_hours"); value != "" {
+		t.Fatal("partial settings committed")
+	}
+}

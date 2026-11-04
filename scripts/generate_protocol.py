@@ -46,14 +46,14 @@ admin={
  '/api/admin/revoke':('Revoke current, previous and pending device credentials',{'id':text}),
  '/api/admin/policy':('Set interval and allowed switches only',{'id':text,'policy':{'$ref':'#/components/schemas/Policy'}}),
  '/api/admin/readers':('Create a scoped reader or revoke by reader ID',{'name':text,'devices':{'type':'array','items':text},'revoke':text}),
- '/api/admin/retention':('Configure bounded retention',{'raw_hours':{'type':'integer'},'minute_days':{'type':'integer'},'audit_days':{'type':'integer'}}),
+ '/api/admin/settings':('Configure bounded retention',{'raw_hours':{'type':'integer'},'minute_days':{'type':'integer'},'audit_days':{'type':'integer'}}),
  '/api/admin/account':('Reauthenticate to change password or TOTP',{'password':text,'totp':text,'action':{'type':'string','enum':['password','totp_prepare','totp_enable','totp_disable']},'new_password':text,'secret':text}),
 }
 for path,(description,props) in admin.items():
  op=operation(description,[{'session':[]}],props)
  op['parameters']=[{'in':'header','name':'X-CSRF-Token','required':True,'schema':text},{'in':'header','name':'Origin','required':True,'schema':text}]
  api['paths'][path]={'post':op}
-for path in ['/api/admin/readers','/api/admin/retention','/api/admin/audit']:
+for path in ['/api/admin/readers','/api/admin/settings','/api/admin/audit']:
  api['paths'].setdefault(path,{})['get']=operation('Read private administration data',[{'session':[]}])
 
 def refs(v):

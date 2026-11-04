@@ -857,7 +857,7 @@
         ]
       }
     },
-    "/api/admin/retention": {
+    "/api/admin/settings": {
       "post": {
         "summary": "Configure bounded retention",
         "responses": {
