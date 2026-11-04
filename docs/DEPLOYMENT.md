@@ -90,7 +90,7 @@ arm64 包的镜像标签为 `chronos-agent:0.1.0-arm64`，设置 `CHRONOS_AGENT_
 
 ## macOS
 
-运行完整 `.app` 包，包含同目录下的 Go 程序与 Swift Keychain helper。托盘需 macOS 本机 CGO 编译；交叉编译的 headless 二进制不能冒称完整桌面安装版。Intel 和 Apple Silicon 分别构建。
+运行完整 `.app` 包，包含同目录下的 Go 程序与 Swift Keychain helper。托盘需 macOS 本机 CGO 编译；交叉编译的 headless 二进制不能冒称完整桌面安装版。Intel 和 Apple Silicon 分别构建；Go 1.27 要求 macOS 13+，应用与 Swift helper 的部署目标均设为 13.0，当前 CI 实测为 macOS 15。
 
 `deploy/macos/build.sh` 在 macOS 上生成应用；`install.sh` 安装到 `~/Applications` 并可选注册当前用户 LaunchAgent。卸载先停止 LaunchAgent，在 Hub 撤销设备，再移除对应 Keychain 条目和配置目录。
 
