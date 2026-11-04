@@ -23,4 +23,6 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
 </dict></plist>
 PLIST
 cp LICENSE NOTICE THIRD_PARTY_NOTICES.md "$app/Contents/Resources/"
+if test -d artifacts/third-party; then cp -R artifacts/third-party "$app/Contents/Resources/third-party"; fi
+if test -f artifacts/bom.cdx.json; then cp artifacts/bom.cdx.json "$app/Contents/Resources/"; fi
 echo "Built unsigned application: $app"

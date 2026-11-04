@@ -15,7 +15,7 @@
 | TLS | 不信任的证书拒绝；重定向不跟随、不向第二地址泄露凭据 |
 | 浏览器真实联调 | 独立本机 Hub + Windows Agent 初始化、配对、DPAPI 保存、持续上报成功 |
 | 管理页布局 | 320 / 390 / 768 / 1366px 无整页横向溢出，无 JS pageerror；不是 iOS Safari 实机结论 |
-| Android 构建 | Debug APK 与 Lint 通过；警告不冒称为零 |
+| Android 构建 | Debug 与独立私钥签名 Release APK 构建、Lint 通过；警告不冒称为零 |
 | Android 设备测试 | 独立 Android 16 模拟器 4 项通过：Keystore 加解密／非明文文件、能力 null、暂停不请求、HTTPS 根地址限制 |
 | 工作台适配 | Python 4 项映射测试通过：缺失值、HTTPS／稳定绑定、绑定丢失占位和缓存复用 |
 | Windows 安装器 | Inno Setup 成功生成当前用户安装包；未自动覆盖或替换现有采集器 |
@@ -37,7 +37,7 @@
 - Android 真机 Doze、厂商省电、长期后台、密钥失效、切网和低电量；模拟器测试不覆盖厂商行为。
 - iOS Safari、Android Chrome 真实设备、屏幕阅读器和 200% 字体完整巡检。
 - 生产工作台适配与逐节点迁移未执行；旧历史与现有凭据保持原样。
-- 无商业签名／macOS 公证；Android 开发 APK 使用 debug 签名，正式发行需独立保管私钥。
+- Windows 无商业签名、macOS 无公证；Android 发行 APK 使用独立私钥签名，私钥与 DPAPI 保护的密码留在本机受限目录，未进入公开仓库。
 - 管理页当前提供 CPU 历史曲线和全部能力快照；没有逐磁盘长期图表、多用户 RBAC、自动更新或远程命令。
 
 CI 的真实结果以仓库 Actions 为准。工作流排队、运行中或仅有配置文件，都不表示构建成功。发布记录应另附对应 commit 和 run。
