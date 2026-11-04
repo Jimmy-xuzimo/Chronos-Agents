@@ -103,14 +103,16 @@ class MainActivity : ComponentActivity() {
                 }
                 status =
                     if (e.code in listOf(401, 403)) store.status() else "同步未完成 · HTTP ${e.code}"
+            } catch (e: CancellationException) {
+                throw e
             } catch (_: Exception) {
                 status = "网络或凭据存储不可用，请检查连接"
             } finally {
                 busy = false
             }
         }
-        LaunchedEffect(resumed, live, settings.deviceId, settings.paused) {
-            Network.foregroundActive = resumed && live && !settings.paused
+        LaunchedEffect(resumed, live, settings.deviceId, settings.paused, confirmForget) {
+            Network.foregroundActive = resumed && live && !settings.paused && !confirmForget
             if (Network.foregroundActive && settings.deviceId.isNotBlank()) {
                 while (isActive) {
                     sync()
@@ -192,13 +194,27 @@ class MainActivity : ComponentActivity() {
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            store.forget()
-                            settings = store.settings()
-                            origin = ""
-                            code = ""
-                            sample = null
-                            status = "已清除本机连接"
-                            confirmForget = false
+                            scope.launch {
+                                busy = true
+                                try {
+                                    withContext(Dispatchers.IO) { Network.forget(context) }
+                                    settings = store.settings()
+                                    origin = ""
+                                    code = ""
+                                    ca = ""
+                                    sample = null
+                                    paused = false
+                                    wifi = true
+                                    battery = false
+                                    minutes = "15"
+                                    status = "已清除本机连接"
+                                    confirmForget = false
+                                } catch (_: Exception) {
+                                    status = "清除凭据失败，请重试"
+                                } finally {
+                                    busy = false
+                                }
+                            }
                         },
                     ) {
                         Text("断开连接")

@@ -22,8 +22,21 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
+    val releaseStore = System.getenv("CHRONOS_KEYSTORE")
+    signingConfigs {
+        if (!releaseStore.isNullOrBlank()) {
+            create("privateRelease") {
+                storeFile = file(releaseStore)
+                storePassword = System.getenv("CHRONOS_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("CHRONOS_KEY_ALIAS")
+                keyPassword = System.getenv("CHRONOS_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
+            if (!releaseStore.isNullOrBlank())
+                signingConfig = signingConfigs.getByName("privateRelease")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -50,11 +63,24 @@ dependencies {
 
 tasks.register("exportRuntimeInventory") {
     doLast {
-        val items = configurations.getByName("releaseRuntimeClasspath").resolvedConfiguration.resolvedArtifacts
-            .map { mapOf("group" to it.moduleVersion.id.group, "name" to it.moduleVersion.id.name, "version" to it.moduleVersion.id.version) }
-            .distinct().sortedBy { it["group"] + ":" + it["name"] }
+        val items =
+            configurations
+                .getByName("releaseRuntimeClasspath")
+                .resolvedConfiguration
+                .resolvedArtifacts
+                .map {
+                    mapOf(
+                        "group" to it.moduleVersion.id.group,
+                        "name" to it.moduleVersion.id.name,
+                        "version" to it.moduleVersion.id.version,
+                    )
+                }
+                .distinct()
+                .sortedBy { it["group"] + ":" + it["name"] }
         val destination = rootProject.file("../../artifacts/android-dependencies.json")
         destination.parentFile.mkdirs()
-        destination.writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(items)))
+        destination.writeText(
+            groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(items)),
+        )
     }
 }

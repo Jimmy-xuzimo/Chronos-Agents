@@ -26,6 +26,8 @@ func main() {
 	key := flag.String("tls-key", "", "TLS key file")
 	proxy := flag.String("trusted-proxy", "", "CIDR of the explicit HTTPS reverse proxy")
 	check := flag.Bool("healthcheck", false, "check local listening socket and exit")
+	maxDB := flag.Int("database-limit-mib", 2048, "SQLite page budget, excluding WAL overhead")
+	minFree := flag.Int("min-free-mib", 128, "pause ingestion below this free filesystem space")
 	flag.Parse()
 	if *check {
 		address := *listen
@@ -60,11 +62,12 @@ func main() {
 	if *cert == "" && strings.HasPrefix(origin, "https:") && trusted == nil {
 		log.Fatal("TLS files or an explicit trusted HTTPS proxy are required")
 	}
-	s, e := hub.Open(*dir)
+	s, e := hub.OpenWithLimits(*dir, *maxDB, *minFree)
 	if e != nil {
 		log.Fatal("cannot open private hub storage")
 	}
 	defer s.Close()
+
 	h := hub.New(s, origin, web.Handler())
 	handler := h.Handler()
 	if *cert == "" && trusted != nil {

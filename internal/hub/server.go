@@ -178,6 +178,11 @@ func (h *Server) device(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		duplicate, e := h.Store.Ingest(sample)
+		if storagePressure(e) {
+			w.Header().Set("Retry-After", "60")
+			security.Error(w, 503, "storage_pressure")
+			return
+		}
 		if e != nil {
 			security.Error(w, 500, "storage_error")
 			return

@@ -448,9 +448,11 @@ func (a *Agent) Run(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			timer.Stop()
+			a.runMu.Lock()
 			if a.client != nil {
 				a.client.CloseIdleConnections()
 			}
+			a.runMu.Unlock()
 			return
 		case <-a.wake:
 			timer.Stop()

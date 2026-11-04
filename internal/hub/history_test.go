@@ -83,3 +83,25 @@ func TestFleet100DistinctDevices(t *testing.T) {
 		t.Fatal("fleet histories mixed")
 	}
 }
+
+func TestStoragePressureRejectsWithoutLosingExistingData(t *testing.T) {
+	f := newFixture(t)
+	id, token := f.pair(t)
+	f.s.spaceAt = time.Time{}
+	f.s.minFreeBytes = ^uint64(0)
+	response := f.req("POST", "/api/v1/ingest", sample(id, 1), token)
+	if response.Code != 503 || response.Header().Get("Retry-After") != "60" {
+		t.Fatal("low disk did not pause intake")
+	}
+	var n int
+	if err := f.s.DB.QueryRow("SELECT count(*) FROM samples").Scan(&n); err != nil || n != 0 {
+		t.Fatal("low disk inserted sample")
+	}
+	if err := f.s.SetStorageLimits(64, 16); err != nil {
+		t.Fatal(err)
+	}
+	f.s.spaceAt = time.Time{}
+	if response = f.req("POST", "/api/v1/ingest", sample(id, 2), token); response.Code != 202 {
+		t.Fatal("storage recovery failed")
+	}
+}

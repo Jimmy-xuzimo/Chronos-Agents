@@ -62,6 +62,18 @@ docker compose -f deploy/docker/compose.agent.yml up -d --build
 
 模板采用 Linux host 网络，使 `127.0.0.1:17860` 真正只监听 NAS 本机，同时读取主机网卡计数。容器无法用此方法采集 Windows / macOS Docker Desktop 物理主机，后者应安装原生 Agent。
 
+### 使用预构建镜像
+
+Release 如提供对应架构的 `*-image.tar.gz`，可先校验 SHA256，再解压加载：
+
+```sh
+gzip -dc chronos-agent-0.1.0-linux-amd64-image.tar.gz | docker load
+# 已加载镜像时使用 --no-build，避免在 NAS 重新编译。
+docker compose -f deploy/docker/compose.agent.yml up -d --no-build
+```
+
+arm64 包的镜像标签为 `chronos-agent:0.1.0-arm64`，设置 `CHRONOS_AGENT_IMAGE` 指向它；Hub 同理使用 `CHRONOS_HUB_IMAGE`。不要将仅构建了 amd64 的包标为多架构镜像。
+
 ### 从局域网打开 NAS 管理页
 
 默认 localhost **不能**从另一台电脑直接访问。可选择以下一种明确方式：
@@ -98,6 +110,7 @@ Token 由 Android Keystore 保护，禁用系统备份。清除数据或密钥�
 - 在隔离目录恢复，使用相同 origin；对外开放前检查权限与设备／读者范围。恢复旧备份可能恢复已撤销凭据，必须重做之后的撤销操作并审查审计。
 - Agent 只备份配置；设备凭据依赖平台用户或密钥环。跨设备恢复应重新配对，不导出可迁移明文 Token。
 - 切换工作台数据源前保留旧历史、旧配置和旧程序。先停同设备旧采集器，再启新 Agent；回退时反向执行。新项目安装器不会自动替换旧程序。
+- Hub 默认 SQLite 数据页预算 2048 MiB，剩余空间低于 128 MiB 暂停接收并返回 503 / Retry-After。可用 `--database-limit-mib`、`--min-free-mib` 调整；WAL 与备份需预留额外空间，不能将数据库预算当成整个目录的精确硬上限。
 - Hub 默认每小时清理过期样本和审计。数据库页释放不等于立即收缩文件；维护窗口可在完整备份后进行 SQLite VACUUM。不要在小内存设备高峰时执行。
 
 ## 构建与校验
@@ -105,3 +118,7 @@ Token 由 Android Keystore 保护，禁用系统备份。清除数据或密钥�
 `scripts/build.ps1` 生成 Windows 与 Linux 多架构二进制、依赖清单和 SHA256；Windows 安装器另需 Inno Setup。Android 使用 Gradle 依赖校验。macOS 包在 macOS CI / 本机生成，不能由 Windows 编译 helper。
 
 构建产物未做商业代码签名。用 Release 的 SHA256 验证下载完整性；哈希证明文件一致，不替代可信签名。未实测的硬件／系统限制见 [VALIDATION.md](VALIDATION.md)。
+
+## Android 发行签名
+
+本地发行可通过环境变量 `CHRONOS_KEYSTORE`、`CHRONOS_KEYSTORE_PASSWORD`、`CHRONOS_KEY_ALIAS`、`CHRONOS_KEY_PASSWORD` 传入自己的私有签名配置，再运行 `:app:assembleRelease`。未配置时不会把 debug 密钥冒充正式签名。不要把密钥、密码或签名配置文件提交 Git；同一应用后续升级必须使用同一签名私钥。构建完清理进程环境变量，独立备份私钥及密码。CI 默认仅构建开发 APK，不持有发行私钥。

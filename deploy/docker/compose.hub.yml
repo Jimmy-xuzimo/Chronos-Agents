@@ -5,7 +5,7 @@ services:
       context: ../..
       dockerfile: deploy/docker/Dockerfile
       args: {COMPONENT: hub}
-    image: chronos-hub:local
+    image: ${CHRONOS_HUB_IMAGE:-chronos-hub:0.1.0}
     command: ["--data", "/data", "--listen", "0.0.0.0:17870", "--origin", "${HUB_ORIGIN:?Set HTTPS Hub origin}", "--tls-cert", "/certs/fullchain.pem", "--tls-key", "/certs/privkey.pem"]
     ports: ["${HUB_BIND_IP:-127.0.0.1}:17870:17870"]
     volumes: ["hub-data:/data", "./certs:/certs:ro"]

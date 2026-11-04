@@ -111,7 +111,11 @@ func main() {
 			log.Fatal("host-mounted mode needs explicit --volumes; container filesystem must not be called host storage")
 		}
 	}
-	listener,e:=net.Listen("tcp",*listen);if e!=nil{log.Fatal("management port already in use; existing agent remains running")};defer listener.Close()
+	listener, e := net.Listen("tcp", *listen)
+	if e != nil {
+		log.Fatal("management port already in use; existing agent remains running")
+	}
+	defer listener.Close()
 	a, e := agent.Open(*dir, origin, *scope, collector.CSV(*volumes), *dev, web.Handler())
 	if e != nil {
 		log.Fatal("cannot initialize agent; inspect protected configuration and credential store")
@@ -143,7 +147,7 @@ func main() {
 	go func() {
 		defer close(done)
 		if *cert != "" {
-			e = s.ServeTLS(listener,*cert,*key)
+			e = s.ServeTLS(listener, *cert, *key)
 		} else {
 			e = s.Serve(listener)
 		}

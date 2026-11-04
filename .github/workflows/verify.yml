@@ -99,6 +99,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
       - name: Build both containers
         run: |
           docker build -f deploy/docker/Dockerfile --build-arg COMPONENT=agent -t chronos-agent:test .
@@ -111,6 +113,20 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:17860/api/local/status)" = 401
           docker exec agent /usr/local/bin/chronos --healthcheck
           test "$(docker exec agent id -u)" = 10001
+      - name: Export versioned image archives for NAS installation
+        run: |
+          mkdir -p artifacts
+          for component in agent hub; do
+            docker tag "chronos-$component:test" "chronos-$component:0.1.0"
+            docker save "chronos-$component:0.1.0" | gzip -c > "artifacts/chronos-$component-0.1.0-linux-amd64-image.tar.gz"
+            docker buildx build --platform linux/arm64 --load -f deploy/docker/Dockerfile --build-arg COMPONENT="$component" -t "chronos-$component:0.1.0-arm64" .
+            docker save "chronos-$component:0.1.0-arm64" | gzip -c > "artifacts/chronos-$component-0.1.0-linux-arm64-image.tar.gz"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docker-images
+          path: artifacts/*-image.tar.gz
+          retention-days: 14
       - name: Cleanup
         if: always()
         run: docker rm -f agent || true

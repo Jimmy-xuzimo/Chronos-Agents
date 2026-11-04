@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/Jimmy-xuzimo/Chronos-Agents/internal/protocol"
@@ -14,11 +15,16 @@ import (
 )
 
 type Store struct {
-	DB        *sql.DB
-	Directory string
+	DB           *sql.DB
+	Directory    string
+	spaceMu      sync.Mutex
+	spaceAt      time.Time
+	spaceOK      bool
+	minFreeBytes uint64
 }
 
-func Open(dir string) (*Store, error) {
+func Open(dir string) (*Store, error) { return OpenWithLimits(dir, 2048, 128) }
+func OpenWithLimits(dir string, databaseMiB, minFreeMiB int) (*Store, error) {
 	if e := os.MkdirAll(dir, 0700); e != nil {
 		return nil, e
 	}
@@ -70,7 +76,11 @@ CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY,at INTEGER NOT NULL,eve
 		}
 	}
 	_ = os.Chmod(path, 0600)
-	s := &Store{db, dir}
+	s := &Store{DB: db, Directory: dir}
+	if err := s.SetStorageLimits(databaseMiB, minFreeMiB); err != nil {
+		db.Close()
+		return nil, err
+	}
 	if s.Get("admin_password") == "" && s.Get("bootstrap_hash") == "" {
 		bootstrap := security.Random(32)
 		if e = s.Set("bootstrap_hash", security.Hash(bootstrap)); e != nil {
@@ -264,6 +274,9 @@ func metric(e *protocol.Envelope, name, key string) any {
 	return v
 }
 func (s *Store) Ingest(e protocol.Envelope) (bool, error) {
+	if err := s.checkStorage(); err != nil {
+		return false, err
+	}
 	full, _ := json.Marshal(e)
 	history := e
 	history.Metrics = map[string]protocol.Metric{}

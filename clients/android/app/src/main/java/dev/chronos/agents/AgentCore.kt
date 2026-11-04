@@ -319,6 +319,14 @@ object Sampler {
 class HttpFailure(val code: Int, val retryAfter: Int = 0) : Exception("HTTP $code")
 
 object Network {
+    @Synchronized
+    fun forget(context: Context) {
+        Store(context).forget()
+        foregroundActive = false
+        lastAttempt = 0
+        retryUntil = 0
+    }
+
     @Volatile var foregroundActive = false
     private var lastAttempt = 0L
     @Volatile private var retryUntil = 0L
