@@ -3,8 +3,19 @@ import AppKit
 import Security
 
 @MainActor final class Model: ObservableObject {
- @Published var password="", hub="", code="", interval=10, processes=false, addresses=false, hostname=false, battery=false
- @Published var status="本机采集 · 主动上报", notice="", unlocked=false, busy=false, paused=false
+ @Published var password=""
+ @Published var hub=""
+ @Published var code=""
+ @Published var interval=10
+ @Published var processes=false
+ @Published var addresses=false
+ @Published var hostname=false
+ @Published var battery=false
+ @Published var status="本机采集 · 主动上报"
+ @Published var notice=""
+ @Published var unlocked=false
+ @Published var busy=false
+ @Published var paused=false
  private var config:[String:Any]=[:], csrf=""
  private let base="http://127.0.0.1:17860"
  func request(_ path:String,_ body:[String:Any]?=nil) async throws -> [String:Any] {
@@ -33,7 +44,7 @@ import Security
  private func remember(_ p:String){SecItemDelete(key as CFDictionary);var q=key;q[kSecValueData as String]=Data(p.utf8);q[kSecAttrAccessible as String]=kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly;SecItemAdd(q as CFDictionary,nil)}
  func restore() async {var q=key;q[kSecReturnData as String]=true;var result:CFTypeRef?;if SecItemCopyMatching(q as CFDictionary,&result)==errSecSuccess,let d=result as? Data,let p=String(data:d,encoding:.utf8){password=p;await login()}}
 }
-struct ControlView: View {
+@MainActor struct ControlView: View {
  @StateObject private var model=Model()
  var body:some View {
   VStack(alignment:.leading,spacing:18){
@@ -50,9 +61,10 @@ struct ControlView: View {
    }.disabled(!model.unlocked || model.busy)
    Text(model.notice).font(.callout).foregroundStyle(.secondary).frame(minHeight:40,alignment:.topLeading)
    Text("凭据保存在 macOS 钥匙串 · 后台启动由配套安装脚本配置").font(.caption).foregroundStyle(.secondary)
-  }.padding(28).frame(width:540).background(LinearGradient(colors:[Color(red:0.89,green:0.96,blue:0.95),Color(red:0.94,green:0.91,blue:0.98)],startPoint:.topLeading,endPoint:.bottomTrailing)).textFieldStyle(.roundedBorder)
+  }.padding(28).frame(width:540).textFieldStyle(.roundedBorder)
    .onAppear{NSApp.setActivationPolicy(.regular);NSApp.activate(ignoringOtherApps:true)}
    .task{await model.restore();while !Task.isCancelled {try? await Task.sleep(nanoseconds:5_000_000_000);if model.unlocked && !model.busy{try? await model.refresh()}}}
  }
 }
-@main struct NativeControl: App {var body:some Scene{WindowGroup("Chronos Agent"){ControlView()}.windowResizability(.contentSize)}}
+final class WindowDelegate:NSObject,NSApplicationDelegate {func applicationShouldTerminateAfterLastWindowClosed(_ sender:NSApplication)->Bool {true}}
+@main @MainActor struct NativeControl: App {@NSApplicationDelegateAdaptor(WindowDelegate.self) var delegate;var body:some Scene{WindowGroup("Chronos Agent"){ControlView()}.windowResizability(.contentSize)}}
