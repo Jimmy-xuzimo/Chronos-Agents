@@ -183,7 +183,11 @@ func (s *Store) RePair(id string) (string, error) {
 	if e = tx.QueryRow("SELECT count(*) FROM devices WHERE id=?", id).Scan(&n); e != nil || n != 1 {
 		return "", errors.New("device missing")
 	}
-	_, e = tx.Exec("DELETE FROM pairs WHERE device_id=?;INSERT INTO pairs(hash,device_id,expires)VALUES(?,?,?)", id, security.Hash(code), id, time.Now().Add(10*time.Minute).Unix())
+	_, e = tx.Exec("DELETE FROM pairs WHERE device_id=?", id)
+	if e != nil {
+		return "", e
+	}
+	_, e = tx.Exec("INSERT INTO pairs(hash,device_id,expires)VALUES(?,?,?)", security.Hash(code), id, time.Now().Add(10*time.Minute).Unix())
 	if e != nil {
 		return "", e
 	}
@@ -222,8 +226,18 @@ func (s *Store) Rotate(id string) (string, error) {
 	return token, e
 }
 func (s *Store) Revoke(id string) error {
-	_, e := s.DB.Exec("UPDATE devices SET revoked=1,token_hash='',previous_hash='',previous_until=0 WHERE id=?;DELETE FROM pairs WHERE device_id=?", id, id)
-	return e
+	tx, e := s.DB.Begin()
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback()
+	if _, e = tx.Exec("UPDATE devices SET revoked=1,token_hash='',previous_hash='',previous_until=0 WHERE id=?", id); e != nil {
+		return e
+	}
+	if _, e = tx.Exec("DELETE FROM pairs WHERE device_id=?", id); e != nil {
+		return e
+	}
+	return tx.Commit()
 }
 func (s *Store) Reader(token string) ([]string, bool) {
 	var raw string
@@ -338,6 +352,23 @@ func (s *Store) Cleanup() error {
 	raw := security.Int(s.Get("raw_hours"), 24, 1, 168)
 	minutes := security.Int(s.Get("minute_days"), 30, 1, 365)
 	audit := security.Int(s.Get("audit_days"), 90, 1, 365)
-	_, e := s.DB.Exec("DELETE FROM samples WHERE sampled<?;DELETE FROM minutes WHERE minute<?;DELETE FROM audit WHERE at<?;DELETE FROM pairs WHERE expires<?", now.Add(-time.Duration(raw)*time.Hour).Unix(), now.Add(-time.Duration(minutes)*24*time.Hour).Unix(), now.Add(-time.Duration(audit)*24*time.Hour).Unix(), now.Unix())
-	return e
+	tx, e := s.DB.Begin()
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback()
+	for _, item := range []struct {
+		query  string
+		cutoff int64
+	}{
+		{"DELETE FROM samples WHERE sampled<?", now.Add(-time.Duration(raw) * time.Hour).Unix()},
+		{"DELETE FROM minutes WHERE minute<?", now.Add(-time.Duration(minutes) * 24 * time.Hour).Unix()},
+		{"DELETE FROM audit WHERE at<?", now.Add(-time.Duration(audit) * 24 * time.Hour).Unix()},
+		{"DELETE FROM pairs WHERE expires<?", now.Unix()},
+	} {
+		if _, e = tx.Exec(item.query, item.cutoff); e != nil {
+			return e
+		}
+	}
+	return tx.Commit()
 }
