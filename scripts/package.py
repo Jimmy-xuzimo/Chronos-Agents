@@ -12,7 +12,7 @@ parser.add_argument('--output', default='.runtime/release')
 args = parser.parse_args()
 out = root / args.output
 out.mkdir(parents=True, exist_ok=True)
-version = '0.1.0'
+version = '1.0.0'
 artifacts = root / 'artifacts'
 legal = [(root / name, name) for name in ('LICENSE', 'NOTICE', 'THIRD_PARTY_NOTICES.md', 'README.md')]
 for directory in ('docs', 'protocol'):
@@ -23,6 +23,7 @@ legal += [(artifacts / 'bom.cdx.json', 'bom.cdx.json')]
 for platform, arch in [('windows', 'amd64'), ('linux', 'amd64'), ('linux', 'arm64')]:
     suffix = '.exe' if platform == 'windows' else ''
     members = [(artifacts / f'chronos-{component}-{platform}-{arch}{suffix}', f'chronos-{component}{suffix}') for component in ('agent', 'hub')]
+    if platform == "windows": members.append((artifacts / "ChronosAgent.UI.exe", "ChronosAgent.UI.exe"))
     members += legal
     if platform == 'linux':
         members += [(file, file.relative_to(root).as_posix()) for folder in ('deploy/systemd', 'deploy/docker') for file in (root / folder).glob('*') if file.suffix in ('.service', '.yml')]

@@ -8,6 +8,7 @@ import (
 	"fyne.io/systray"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 )
 
@@ -57,9 +58,11 @@ func Run(ctx context.Context, origin string, paused func() bool, toggle func(), 
 func Open(origin string) {
 	switch runtime.GOOS {
 	case "windows":
-		_ = exec.Command("rundll32.exe", "url.dll,FileProtocolHandler", origin).Start()
+		exe, _ := os.Executable()
+		_ = exec.Command(filepath.Join(filepath.Dir(exe), "ChronosAgent.UI.exe")).Start()
 	case "darwin":
-		_ = exec.Command("/usr/bin/open", origin).Start()
+		exe, _ := os.Executable()
+		_ = exec.Command(filepath.Join(filepath.Dir(exe), "chronos-control")).Start()
 	default:
 		_ = exec.Command("xdg-open", origin).Start()
 	}

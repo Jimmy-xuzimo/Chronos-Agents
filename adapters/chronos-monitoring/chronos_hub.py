@@ -47,7 +47,7 @@ def stats(device):
         'system': {'os': system.get('os_name'), 'kernel': system.get('kernel_version'), 'hostname': system.get('hostname'), 'cpu_cores': cpu.get('cores'), 'uptime': system.get('uptime_seconds'), 'load': [], 'public_ip': None, 'cpu_model': None, 'procs': None},
         'sampled_at': timestamp(sample.get('sampled_at')),
         'capabilities': {key: {'status': value.get('status'), 'scope': value.get('scope')} for key, value in sample.get('metrics', {}).items()},
-        'source': {'provider': 'chronos-hub', 'status': device.get('state'), 'updated': timestamp(sample.get('sampled_at')), 'received': device.get('received_at')},
+        'source': {'provider': 'chronos-hub', 'status': 'ok' if device.get('state') == 'recent' else 'stale', 'error': None if device.get('state') == 'recent' else 'Hub source unavailable or stale', 'attempted': device.get('received_at'), 'updated': timestamp(sample.get('sampled_at')), 'received': device.get('received_at')},
     }
 
 
@@ -130,6 +130,10 @@ def install(app, authenticated, hub):
     Existing nodes not in bindings retain their original source and history.
     """
     from flask import jsonify, make_response, request
+    def merge_nodes(old, new):
+        mapping = {node['id']: node for node in new}
+        result = [mapping.pop(node['id'], node) for node in old]
+        return result + list(mapping.values())
     originals = {key: app.view_functions[key] for key in ('nodes', 'stats', 'history', 'overview')}
 
     @authenticated
@@ -138,7 +142,7 @@ def install(app, authenticated, hub):
         if response.status_code != 200:
             return response
         items = response.get_json()['items']
-        return jsonify(items=[n for n in items if n['id'] not in hub.bindings] + hub.nodes())
+        return jsonify(items=merge_nodes(items, hub.nodes()))
 
     @authenticated
     def device_stats():
@@ -154,7 +158,15 @@ def install(app, authenticated, hub):
         if alias not in hub.bindings:
             return originals['history']()
         try:
-            return jsonify(hub.history(alias, request.args.get('range', '24h')))
+            current = hub.history(alias, request.args.get('range', '24h'))
+            legacy_response = make_response(originals['history']())
+            if legacy_response.status_code == 200:
+                legacy = legacy_response.get_json().get('points', [])
+                points = current['points']
+                boundary = min((p['ts'] for p in points), default=float('inf'))
+                current['points'] = [p for p in legacy if p['ts'] < boundary] + points
+                current['source']['legacy_history_retained'] = True
+            return jsonify(current)
         except (OSError, ValueError, KeyError):
             return jsonify(error='hub_history_unavailable'), 502
 
@@ -164,11 +176,13 @@ def install(app, authenticated, hub):
         if response.status_code != 200:
             return response
         data = response.get_json()
-        data['nodes'] = [n for n in data.get('nodes', []) if n['id'] not in hub.bindings] + hub.nodes()
+        data['nodes'] = merge_nodes(data.get('nodes', []), hub.nodes())
         alias = data.get('node_id', 'server')
         if alias in hub.bindings:
             device = hub.devices().get(alias)
-            data['stats'] = stats(device) if device and device.get('latest') else None
+            snapshot = stats(device) if device and device.get('latest') else None
+            meta = snapshot['source'] if snapshot else {'status': 'error', 'updated': None, 'error': 'hub_source_unavailable'}
+            data['stats'] = dict(meta, data=snapshot)
             data['collector'] = {'provider': 'chronos-hub', 'status': device.get('state') if device else 'source_unavailable'}
         return jsonify(data)
 

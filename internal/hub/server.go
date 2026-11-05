@@ -43,7 +43,7 @@ func (h *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.URL.Path == "/api/info" {
-		security.JSON(w, 200, map[string]string{"role": "hub", "version": "0.1.0"})
+		security.JSON(w, 200, map[string]string{"role": "hub", "version": "1.0.0"})
 		return
 	}
 	if h.Gate.Route(w, r) {

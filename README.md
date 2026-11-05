@@ -5,12 +5,23 @@
 <p align="center">
   <a href="https://github.com/Jimmy-xuzimo/Chronos-Agents/actions/workflows/verify.yml"><img src="https://github.com/Jimmy-xuzimo/Chronos-Agents/actions/workflows/verify.yml/badge.svg" alt="Verify"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="Apache 2.0"></a>
-  <img src="https://img.shields.io/badge/status-preview-orange" alt="Preview">
+  <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="1.0.0">
 </p>
 
 Chronos Agents 是独立的设备遥测项目，包含轻量采集器、Android 应用、带管理网页的 Hub，以及 Chronos Monitoring 的只读适配层。Windows、Linux、macOS 共用 Go 采集核心；Android 使用原生 Compose 与 WorkManager，并遵循相同的协议、单位和能力状态。
 
-**当前为 0.1.0 预览版本。** 请先使用测试节点。可用功能、构建结果和未完成的实机验证分别记录在 [验证记录](docs/VALIDATION.md)，不将交叉编译等同于实机通过。
+**首个正式版本 1.0.0。** 建议先接入一台测试节点。可用功能、构建结果和未完成的实机验证分别记录在 [验证记录](docs/VALIDATION.md)，不将交叉编译等同于实机通过。
+
+[产品主页](https://jimmy-xuzimo.github.io/Chronos-Agents/) · [正式版下载](https://github.com/Jimmy-xuzimo/Chronos-Agents/releases/latest)
+
+## 各端交互
+
+- **Windows：**从开始菜单或托盘打开原生窗口；关闭窗口继续采集。管理密码可以由 DPAPI 加密记住，设备 Token 保持原有存储。
+- **macOS：**SwiftUI 原生窗口 + 菜单栏后台程序。管理密码保存在钥匙串；安装脚本支持登录自启动。
+- **Linux / NAS：**保留认证网页端口，支持原生服务和 Docker。
+- **Android：**原生 Compose App。
+
+桌面程序内部仍使用仅绑定 loopback 的本机 API，让界面与采集核心解耦；日常操作不需要浏览器，未引入 WebView 或 Electron。Hub 的管理网页独立保留。
 
 ## 界面预览
 
@@ -30,7 +41,7 @@ Chronos Agents 是独立的设备遥测项目，包含轻量采集器、Android 
 
 | 部分 | 功能 |
 |---|---|
-| 桌面采集器 | 托盘、暂停、采样间隔、电池策略、私有 CA、凭据轮换；固定彩色管理页 |
+| 桌面采集器 | Windows / macOS 原生窗口、托盘 / 菜单栏、暂停、采样间隔和隐私控制；Linux / NAS 网页管理 |
 | Linux / NAS | 原生后台服务或 Docker；有独立管理端口、登录和 CSRF 防护 |
 | Android | 手动或二维码图片配对、后台周期上报、应用可见时实时采集、网络与供电约束 |
 | Hub | 设备列表、一次性配对、采集权限、只读连接、撤销、历史、审计、保留期限、密码与 TOTP |

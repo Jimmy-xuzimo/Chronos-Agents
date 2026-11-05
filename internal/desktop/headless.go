@@ -4,7 +4,9 @@ package desktop
 
 import (
 	"context"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 )
 
@@ -13,7 +15,8 @@ func Run(ctx context.Context, origin string, paused func() bool, toggle func(), 
 }
 func Open(origin string) {
 	if runtime.GOOS == "darwin" {
-		_ = exec.Command("/usr/bin/open", origin).Start()
+		exe, _ := os.Executable()
+		_ = exec.Command(filepath.Join(filepath.Dir(exe), "chronos-control")).Start()
 	} else {
 		_ = exec.Command("xdg-open", origin).Start()
 	}

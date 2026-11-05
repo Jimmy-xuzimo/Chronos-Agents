@@ -121,10 +121,10 @@ jobs:
         run: |
           mkdir -p artifacts
           for component in agent hub; do
-            docker tag "chronos-$component:test" "chronos-$component:0.1.0"
-            docker save "chronos-$component:0.1.0" | gzip -c > "artifacts/chronos-$component-0.1.0-linux-amd64-image.tar.gz"
-            docker buildx build --platform linux/arm64 --load -f deploy/docker/Dockerfile --build-arg COMPONENT="$component" -t "chronos-$component:0.1.0-arm64" .
-            docker save "chronos-$component:0.1.0-arm64" | gzip -c > "artifacts/chronos-$component-0.1.0-linux-arm64-image.tar.gz"
+            docker tag "chronos-$component:test" "chronos-$component:1.0.0"
+            docker save "chronos-$component:1.0.0" | gzip -c > "artifacts/chronos-$component-1.0.0-linux-amd64-image.tar.gz"
+            docker buildx build --platform linux/arm64 --load -f deploy/docker/Dockerfile --build-arg COMPONENT="$component" -t "chronos-$component:1.0.0-arm64" .
+            docker save "chronos-$component:1.0.0-arm64" | gzip -c > "artifacts/chronos-$component-1.0.0-linux-arm64-image.tar.gz"
           done
       - uses: actions/upload-artifact@v4
         with:

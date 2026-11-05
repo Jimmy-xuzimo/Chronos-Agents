@@ -1,4 +1,4 @@
-param([string]$Setup='artifacts/Chronos-Agent-0.1.0-windows-x64-setup.exe')
+param([string]$Setup='artifacts/Chronos-Agent-1.0.0-windows-x64-setup.exe')
 $ErrorActionPreference='Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 $base=[IO.Path]::GetFullPath((Join-Path (Get-Location) '.runtime'))

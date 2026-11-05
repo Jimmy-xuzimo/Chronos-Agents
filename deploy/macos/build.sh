@@ -10,6 +10,7 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 MACOSX_DEPLOYMENT_TARGET=13.0 CGO_ENABLED=1 GOARCH="$arch" go build -trimpath -ldflags='-s -w' -o "$app/Contents/MacOS/chronos-agent" ./cmd/agent
 swift_arch="$arch"; if test "$arch" = amd64; then swift_arch=x86_64; fi
 swiftc -O -target "$swift_arch-apple-macosx13.0" -framework Security -o "$app/Contents/MacOS/chronos-keychain" deploy/macos/Keychain.swift
+swiftc -O -parse-as-library -target "$swift_arch-apple-macosx13.0" -framework SwiftUI -framework AppKit -framework Security -o "$app/Contents/MacOS/chronos-control" deploy/macos/Control.swift
 cat > "$app/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -17,8 +18,9 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
 <key>CFBundleIdentifier</key><string>dev.chronos.agents</string>
 <key>CFBundleName</key><string>Chronos Agent</string>
 <key>CFBundleExecutable</key><string>chronos-agent</string>
-<key>CFBundleShortVersionString</key><string>0.1.0</string>
+<key>CFBundleShortVersionString</key><string>1.0.0</string>
 <key>CFBundleVersion</key><string>1</string>
+<key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
 <key>LSUIElement</key><true/>
 <key>CFBundleIconFile</key><string>Agent.icns</string>
 <key>LSMinimumSystemVersion</key><string>13.0</string>

@@ -175,7 +175,7 @@ func (a *Agent) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.URL.Path == "/api/info" {
-		security.JSON(w, 200, map[string]string{"role": "agent", "version": "0.1.0"})
+		security.JSON(w, 200, map[string]string{"role": "agent", "version": "1.0.0"})
 		return
 	}
 	if a.gate.Route(w, r) {
@@ -521,7 +521,7 @@ func (a *Agent) step(ctx context.Context) time.Duration {
 	metrics := a.collector.Sample(sampleCtx)
 	cancel()
 	a.sequence++
-	sample := protocol.Envelope{SchemaVersion: 1, DeviceID: c.DeviceID, AgentVersion: "0.1.0", SessionID: a.session, Sequence: a.sequence, SampledAt: time.Now().UTC(), ExpectedIntervalSeconds: int64(interval), Platform: collector.Platform(c.Hostname && policy.Hostname), Metrics: metrics}
+	sample := protocol.Envelope{SchemaVersion: 1, DeviceID: c.DeviceID, AgentVersion: "1.0.0", SessionID: a.session, Sequence: a.sequence, SampledAt: time.Now().UTC(), ExpectedIntervalSeconds: int64(interval), Platform: collector.Platform(c.Hostname && policy.Hostname), Metrics: metrics}
 	a.mu.Lock()
 	a.status.Sample = &sample
 	a.status.LastAttempt = time.Now().Unix()

@@ -25,6 +25,10 @@ try {
       & $Python scripts/licenses.py
       if($LASTEXITCODE -ne 0){throw 'License inventory failed'}
     } finally {$env:PATH=$oldBuildPath}
+    $csc=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
+    $refs='/reference:System.Windows.Forms.dll,System.Drawing.dll,System.Net.Http.dll,System.Web.Extensions.dll,System.Security.dll'
+    & $csc /nologo /target:winexe /optimize+ /win32icon:internal\desktop\icon.ico /out:artifacts\ChronosAgent.UI.exe $refs clients\windows-native\Control.cs
+    if($LASTEXITCODE -ne 0){throw 'Native Windows UI compilation failed'}
     if($Inno){& $Inno deploy/windows/setup.iss;if($LASTEXITCODE -ne 0){throw 'Installer build failed'}}
 } finally {$env:GOOS=$oldOS;$env:GOARCH=$oldArch;$env:CGO_ENABLED=$oldCGO}
 $lines=Get-ChildItem artifacts -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name | ForEach-Object {('{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLower(),$_.Name)}

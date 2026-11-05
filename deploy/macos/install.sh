@@ -10,11 +10,12 @@ echo "Installed to $destination"
 echo 'Run the app directly; optional login startup: install.sh APP_PATH --autostart'
 if test "${2:-}" = --autostart; then
   mkdir -p "$HOME/Library/LaunchAgents"
-  # plistlib escapes user paths correctly, including ampersands and quotes.
-  python3 - "$destination" "$HOME/Library/LaunchAgents/dev.chronos.agents.plist" <<'PY'
-import plistlib, sys
-with open(sys.argv[2], 'wb') as f:
-    plistlib.dump({'Label':'dev.chronos.agents','ProgramArguments':[sys.argv[1]+'/Contents/MacOS/chronos-agent'],'RunAtLoad':True,'KeepAlive':False},f)
-PY
+  plist="$HOME/Library/LaunchAgents/dev.chronos.agents.plist"
+  /usr/bin/plutil -create xml1 "$plist"
+  /usr/bin/plutil -insert Label -string dev.chronos.agents "$plist"
+  /usr/bin/plutil -insert ProgramArguments -xml '<array/>' "$plist"
+  /usr/bin/plutil -insert ProgramArguments.0 -string "$destination/Contents/MacOS/chronos-agent" "$plist"
+  /usr/bin/plutil -insert RunAtLoad -bool YES "$plist"
+  /usr/bin/plutil -insert KeepAlive -bool NO "$plist"
   launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/dev.chronos.agents.plist"
 fi

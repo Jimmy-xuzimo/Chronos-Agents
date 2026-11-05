@@ -63,3 +63,10 @@ python -m unittest discover -s adapters/chronos-monitoring -p 'test_*.py'
 ```
 
 Android：`./gradlew :app:assembleDebug :app:lintDebug :app:connectedDebugAndroidTest`，需要在线模拟器或测试设备。Linux CI 另外运行 race detector。截图由 `scripts/screenshots.cjs` 使用虚构响应生成；README 中的截图不包含真实设备或配对数据。
+
+
+## 1.0.0 正式版验证说明
+
+本版增加 Windows WinForms 原生管理窗口和 macOS SwiftUI 原生管理窗口，Linux / NAS 网页与 Android App 保留。桌面窗口通过 loopback API 复用认证、配对与采集配置，不使用 WebView。
+
+发布时附上最终 CI run、安装包与 SHA256。macOS 原生窗口由两种架构的 macOS CI 编译，不能冒称为本机物理交互验收；Android 厂商后台行为等边界继续有效。首次正式版本是发行阶段，不代表所有硬件验证完成。

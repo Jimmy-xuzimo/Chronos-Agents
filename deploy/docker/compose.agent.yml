@@ -7,7 +7,7 @@ services:
       context: ../..
       dockerfile: deploy/docker/Dockerfile
       args: {COMPONENT: agent}
-    image: ${CHRONOS_AGENT_IMAGE:-chronos-agent:0.1.0}
+    image: ${CHRONOS_AGENT_IMAGE:-chronos-agent:1.0.0}
     network_mode: host
     user: "10001:10001"
     command: ["--headless", "--data", "/data", "--listen", "127.0.0.1:17860", "--origin", "http://127.0.0.1:17860", "--scope", "host", "--volumes", "/host/data"]

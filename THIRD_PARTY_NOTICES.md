@@ -23,3 +23,5 @@ Transitive Go dependencies are enumerated by `go list -m -json all`.
 the release staging directory, rather than attempting to replace them with
 this summary. Android releases must retain upstream license texts in assets.
 Build tools are not necessarily redistributed with application binaries.
+
+产品主页沿用同作者 Chronos Widgets / Monitoring 的视觉系统，字体使用设备系统字体，不下载第三方网页字体。Windows 原生界面使用系统 WinForms，macOS 使用系统 SwiftUI / AppKit。

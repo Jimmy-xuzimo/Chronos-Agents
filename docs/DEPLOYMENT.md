@@ -122,3 +122,14 @@ Token 由 Android Keystore 保护，禁用系统备份。清除数据或密钥�
 ## Android 发行签名
 
 本地发行可通过环境变量 `CHRONOS_KEYSTORE`、`CHRONOS_KEYSTORE_PASSWORD`、`CHRONOS_KEY_ALIAS`、`CHRONOS_KEY_PASSWORD` 传入自己的私有签名配置，再运行 `:app:assembleRelease`。未配置时不会把 debug 密钥冒充正式签名。不要把密钥、密码或签名配置文件提交 Git；同一应用后续升级必须使用同一签名私钥。构建完清理进程环境变量，独立备份私钥及密码。CI 默认仅构建开发 APK，不持有发行私钥。
+
+
+## 1.0 原生桌面窗口
+
+Windows 安装器包含 `chronos-agent.exe` 与 `ChronosAgent.UI.exe`。开始菜单启动器和托盘菜单打开原生窗口，不打开浏览器。窗口首次输入本机管理密码；首次未初始化时，从本机私有初始化文件完成设置。成功后由当前用户 DPAPI 记住密码，后续自动解锁。设置可控制配对、采样间隔、隐私、暂停和立即上传。
+
+macOS 安装包包含 Go 后台核心、SwiftUI `chronos-control` 与钥匙串 helper。菜单栏打开原生窗口；核心后台常驻，窗口关闭不停止采集。使用 `install.sh APP_PATH --autostart` 配置当前用户 LaunchAgent。
+
+Linux / NAS 保持网页管理端口，Android 保持原生 App；Hub 管理页不改变。桌面内部 loopback API 仍存在以供原生窗口调用，远程连接仍要求 HTTPS。
+
+Windows 原生界面使用系统 .NET Framework 4.8 与 WinForms；Windows 11 通常自带，无需 WebView 运行时。macOS 原生界面最低 macOS 13。安装升级前保留私有配置目录，二进制包必须完整放在一起。

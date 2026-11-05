@@ -1,5 +1,5 @@
 #ifndef AppVersion
-  #define AppVersion "0.1.0"
+  #define AppVersion "1.0.0"
 #endif
 [Setup]
 AppId={{9BDCF408-68ED-4A31-9146-4EB7E9FDFA42}
@@ -19,7 +19,7 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 CloseApplications=force
-CloseApplicationsFilter=chronos-agent.exe
+CloseApplicationsFilter=chronos-agent.exe,ChronosAgent.UI.exe
 RestartApplications=no
 LicenseFile=..\..\LICENSE
 
@@ -33,6 +33,8 @@ Source: "..\..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\NOTICE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\artifacts\third-party\*"; DestDir: "{app}\third-party"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+Source: "..\..\artifacts\ChronosAgent.UI.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace
 
 [Icons]
 Name: "{autoprograms}\Chronos Agent"; Filename: "{app}\chronos-agent.exe"; Parameters: "--open"
