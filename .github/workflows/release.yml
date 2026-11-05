@@ -1,0 +1,67 @@
+name: Publish verified stable release
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful Verify and build run for this exact commit
+        required: true
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: stable-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify build origin and download artifacts
+        env:
+          RUN_ID: ${{ inputs.run_id }}
+        run: |
+          set -eu
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" > /tmp/build-run.json
+          python - <<'PY'
+          import json,os
+          r=json.load(open('/tmp/build-run.json'))
+          assert r['conclusion']=='success' and r['status']=='completed'
+          assert r['head_sha']==os.environ['GITHUB_SHA']
+          assert r['name']=='Verify and build'
+          assert r['head_repository']['full_name']==os.environ['GITHUB_REPOSITORY']
+          PY
+          gh run download "$RUN_ID" -D .runtime/ci
+      - name: Stage explicit distributables
+        env:
+          RUN_ID: ${{ inputs.run_id }}
+        run: |
+          set -eu
+          mkdir -p artifacts
+          cp -a .runtime/ci/native-windows-2025/. artifacts/
+          test -f artifacts/ChronosAgent.UI.exe
+          python scripts/package.py
+          cp .runtime/ci/native-macos-*/*.tar.gz .runtime/release/
+          cp .runtime/ci/docker-images/*.tar.gz .runtime/release/
+          gh release download v1.0.0 --pattern chronos-agent-1.0.0-android.apk -D .runtime/release
+          python - <<'PY'
+          import json,os,hashlib
+          from pathlib import Path
+          out=Path('.runtime/release')
+          provenance={'source_commit':os.environ['GITHUB_SHA'],'build_run':os.environ['RUN_ID'],'release_workflow':os.environ['GITHUB_RUN_ID'],'android':'Release APK privately signed locally; key never uploaded. Android sources unchanged from verified build 42011545893.'}
+          (out/'BUILD-PROVENANCE.json').write_text(json.dumps(provenance,indent=2)+'\n')
+          (out/'SHA256SUMS.txt').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n' for p in sorted(out.iterdir()) if p.is_file() and p.name!='SHA256SUMS.txt'))
+          PY
+      - name: Audit source and packaged contents
+        run: |
+          python scripts/check_public.py
+          python scripts/audit_artifacts.py .runtime/release
+      - name: Upload and publish after all checks
+        run: |
+          gh release upload v1.0.0 .runtime/release/* --clobber
+          gh release edit v1.0.0 --title 'Chronos Agents 1.0.0' --notes-file docs/releases/1.0.0.md --draft=false --latest

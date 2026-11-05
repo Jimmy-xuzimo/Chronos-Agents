@@ -66,6 +66,7 @@ jobs:
           path: |
             artifacts/chronos-*
             artifacts/Chronos-*
+            artifacts/ChronosAgent.UI.exe
             artifacts/SHA256SUMS.txt
             artifacts/third-party/
           retention-days: 14
