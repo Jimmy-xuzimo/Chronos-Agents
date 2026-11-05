@@ -46,6 +46,7 @@ jobs:
           cp -a .runtime/ci/native-windows-2025/. artifacts/
           test -f artifacts/ChronosAgent.UI.exe
           python scripts/package.py
+          cp .runtime/ci/android-development/artifacts/android-dependencies.json .runtime/release/android-dependencies.json
           cp .runtime/ci/native-macos-*/*.tar.gz .runtime/release/
           cp .runtime/ci/docker-images/*.tar.gz .runtime/release/
           gh release download v1.0.0 --pattern chronos-agent-1.0.0-android.apk -D .runtime/release

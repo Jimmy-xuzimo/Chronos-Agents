@@ -68,6 +68,7 @@ jobs:
             artifacts/Chronos-*
             artifacts/ChronosAgent.UI.exe
             artifacts/SHA256SUMS.txt
+            artifacts/bom.cdx.json
             artifacts/third-party/
           retention-days: 14
   android:
