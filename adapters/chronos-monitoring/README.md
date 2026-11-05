@@ -2,6 +2,8 @@
 
 此目录是**可选的后端接入层**，不会自动修改正在运行的工作台。需先验证测试设备，然后再由维护者按节点切换。
 
+[Monitoring 源码](https://github.com/Jimmy-xuzimo/Chronos-Monitoring) · [Monitoring 产品页](https://jimmy-xuzimo.github.io/Chronos-Monitoring/) · [Widgets 桌面端](https://jimmy-xuzimo.github.io/Chronos-Widgets/) · [系列接入指南](../../docs/CHRONOS_ECOSYSTEM.md)
+
 ## 接入
 
 1. 在 Hub 创建限定设备的只读凭据。不要用设备 Token 或管理 Cookie。

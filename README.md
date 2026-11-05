@@ -10,9 +10,22 @@
 
 Chronos Agents 是独立的设备遥测项目，包含轻量采集器、Android 应用、带管理网页的 Hub，以及 Chronos Monitoring 的只读适配层。Windows、Linux、macOS 共用 Go 采集核心；Android 使用原生 Compose 与 WorkManager，并遵循相同的协议、单位和能力状态。
 
-**首个正式版本 1.0.0。** 建议先接入一台测试节点。可用功能、构建结果和未完成的实机验证分别记录在 [验证记录](docs/VALIDATION.md)，不将交叉编译等同于实机通过。
+**1.0.0 源码已准备；公开安装包以 Releases 为准。** 建议先接入一台测试节点。可用功能、构建结果和未完成的实机验证分别记录在 [验证记录](docs/VALIDATION.md)，不将交叉编译等同于实机通过。
 
-[产品主页](https://jimmy-xuzimo.github.io/Chronos-Agents/) · [正式版下载](https://github.com/Jimmy-xuzimo/Chronos-Agents/releases/latest)
+[产品主页](https://jimmy-xuzimo.github.io/Chronos-Agents/) · [发行与下载](https://github.com/Jimmy-xuzimo/Chronos-Agents/releases)
+
+## Chronos 系列
+
+跨平台采集器与独立 Hub，认证上报、保留历史，按需接入工作台。 三个项目可以分别使用，也可按需连接。
+
+| 项目 | 作用 | 链接 |
+| --- | --- | --- |
+| **Chronos Monitoring** | 工作台 | [产品网页](https://jimmy-xuzimo.github.io/Chronos-Monitoring/) · [源码](https://github.com/Jimmy-xuzimo/Chronos-Monitoring) · [文档](https://github.com/Jimmy-xuzimo/Chronos-Monitoring/blob/main/docs/deployment.md) |
+| **Chronos Widgets** | 桌面组件 | [产品网页](https://jimmy-xuzimo.github.io/Chronos-Widgets/) · [源码](https://github.com/Jimmy-xuzimo/Chronos-Widgets) · [文档](https://github.com/Jimmy-xuzimo/Chronos-Widgets/blob/main/docs/GETTING_STARTED.md) |
+| **Chronos Agents** | 设备采集 | [产品网页](https://jimmy-xuzimo.github.io/Chronos-Agents/) · [源码](https://github.com/Jimmy-xuzimo/Chronos-Agents) · [文档](https://github.com/Jimmy-xuzimo/Chronos-Agents/blob/main/docs/DEPLOYMENT.md) |
+
+设备 → Agents Hub → Monitoring 后端适配 → Widgets。Agents 可独立运行；Widgets 使用工作台账号，不能直接用 Hub 密码或配对码登录。详情见 [三项目接入与迁移](docs/CHRONOS_ECOSYSTEM.md)。
+
 
 ## 各端交互
 

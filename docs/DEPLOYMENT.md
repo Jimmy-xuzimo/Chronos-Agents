@@ -1,5 +1,7 @@
 # 部署与维护
 
+> 系列项目的职责、账号区别与组合方式见 [Chronos 三项目接入指南](CHRONOS_ECOSYSTEM.md)。Agents 采集设备，Monitoring 汇总业务，Widgets 读取工作台；三者分别部署。
+
 ## Hub
 
 推荐独立域名，例如 `https://hub.example.com`。根地址必须与浏览器访问地址完全一致，包括非默认端口；不支持子路径部署。没有默认管理员账号，首次设置一个管理密码，可选启用 TOTP。
