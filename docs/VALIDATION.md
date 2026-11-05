@@ -70,3 +70,5 @@ Android：`./gradlew :app:assembleDebug :app:lintDebug :app:connectedDebugAndroi
 本版增加 Windows WinForms 原生管理窗口和 macOS SwiftUI 原生管理窗口，Linux / NAS 网页与 Android App 保留。桌面窗口通过 loopback API 复用认证、配对与采集配置，不使用 WebView。
 
 发布时附上最终 CI run、安装包与 SHA256。macOS 原生窗口由两种架构的 macOS CI 编译，不能冒称为本机物理交互验收；Android 厂商后台行为等边界继续有效。首次正式版本是发行阶段，不代表所有硬件验证完成。
+
+Windows 1.0 最终界面沿用原电脑采集器的三项性能摘要与双栏设置，使用独立进程原生 WinForms 渲染。`--snapshot-demo` 仅产生虚构数据截图，不连接服务器、不读取真实凭据、不修改自启动设置。

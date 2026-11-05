@@ -25,6 +25,10 @@ Chronos Agents 是独立的设备遥测项目，包含轻量采集器、Android 
 
 ## 界面预览
 
+Windows 沿用配套电脑采集器的原生双栏界面。下图由正式窗口代码渲染，使用虚构数据。
+
+![Windows 原生采集器](docs/screenshots/windows-native.png)
+
 下图为真实管理页渲染，使用虚构设备数据，不连接私人服务器。
 
 ![Hub 管理页](docs/screenshots/hub-1440.png)
