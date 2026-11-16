@@ -27,6 +27,10 @@ Chronos Agents 是独立的设备遥测项目，包含轻量采集器、Android 
 设备 → Agents Hub → Monitoring 后端适配 → Widgets。Agents 可独立运行；Widgets 使用工作台账号，不能直接用 Hub 密码或配对码登录。详情见 [三项目接入与迁移](docs/CHRONOS_ECOSYSTEM.md)。
 
 
+## Windows 客户端更新
+
+[Windows 1.0.1](https://github.com/Jimmy-xuzimo/Chronos-Agents/releases/tag/windows-v1.0.1) 与 [Widgets 1.2.0](https://github.com/Jimmy-xuzimo/Chronos-Widgets/releases/tag/v1.2.0) 采用统一的轻量彩色桌面设计。修复默认配置路径与登录自启动；版本与验证见 [Windows 发行说明](docs/releases/windows-1.0.1.md)。
+
 ## 各端交互
 
 - **Windows：**从开始菜单或托盘打开原生窗口；关闭窗口继续采集。管理密码可以由 DPAPI 加密记住，设备 Token 保持原有存储。

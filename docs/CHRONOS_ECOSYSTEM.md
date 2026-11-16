@@ -58,3 +58,8 @@ Monitoring 仓库中的 Windows 1.2.0 和 Python NAS / Linux 采样器保留用�
 - Windows / macOS / Android 的实机范围，以各项目验证文档为准；不能用构建成功代替硬件实测。
 
 [Monitoring 验证记录](https://github.com/Jimmy-xuzimo/Chronos-Monitoring/blob/main/docs/VALIDATION.md) · [Widgets 验证记录](https://github.com/Jimmy-xuzimo/Chronos-Widgets/blob/main/docs/VALIDATION.md) · [Agents 验证记录](https://github.com/Jimmy-xuzimo/Chronos-Agents/blob/main/docs/VALIDATION.md)
+
+
+## 桌面配套更新
+
+[Widgets 1.2.0：自适应与图标避让](https://github.com/Jimmy-xuzimo/Chronos-Widgets/blob/main/docs/ADAPTIVE_DESKTOP.md) · [Windows Agent 1.0.1：统一外观与启动目录](https://github.com/Jimmy-xuzimo/Chronos-Agents/blob/main/docs/releases/windows-1.0.1.md)。两款采用相同桌面设计参数，仍分别负责展示与采集。

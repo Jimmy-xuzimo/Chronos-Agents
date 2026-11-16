@@ -2,6 +2,8 @@ param([string]$Go='go',[string]$Inno='',[string]$Rsrc='rsrc',[string]$Python='py
 $ErrorActionPreference='Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 New-Item -ItemType Directory -Force artifacts | Out-Null
+& $Python scripts/check_desktop_design.py
+if($LASTEXITCODE -ne 0){throw 'Desktop design check failed'}
 function Invoke-Build([string]$TargetOS,[string]$Arch,[string]$Component,[bool]$Tray=$false) {
     $env:GOOS=$TargetOS; $env:GOARCH=$Arch; $env:CGO_ENABLED='0'
     $suffix=if($TargetOS -eq 'windows'){'.exe'}else{''}
@@ -27,7 +29,7 @@ try {
     } finally {$env:PATH=$oldBuildPath}
     $csc=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
     $refs='/reference:System.Windows.Forms.dll,System.Drawing.dll,System.Net.Http.dll,System.Web.Extensions.dll,System.Security.dll'
-    & $csc /nologo /target:winexe /optimize+ /win32icon:internal\desktop\icon.ico /out:artifacts\ChronosAgent.UI.exe $refs clients\windows-native\Control.cs
+    & $csc /nologo /target:winexe /optimize+ /win32icon:internal\desktop\icon.ico /out:artifacts\ChronosAgent.UI.exe $refs /resource:design\desktop-design.json,Chronos.DesktopDesign.json clients\windows-native\Control.cs clients\windows-native\DesktopDesign.cs clients\windows-native\GlassButton.cs
     if($LASTEXITCODE -ne 0){throw 'Native Windows UI compilation failed'}
     if($Inno){& $Inno deploy/windows/setup.iss;if($LASTEXITCODE -ne 0){throw 'Installer build failed'}}
 } finally {$env:GOOS=$oldOS;$env:GOARCH=$oldArch;$env:CGO_ENABLED=$oldCGO}

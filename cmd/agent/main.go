@@ -22,7 +22,10 @@ import (
 )
 
 func main() {
-	base, _ := os.UserConfigDir()
+	base, e := configBaseDir()
+	if e != nil {
+		log.Fatal("cannot locate current user's configuration directory")
+	}
 	dir := flag.String("data", filepath.Join(base, "ChronosAgents"), "private local configuration directory")
 	listen := flag.String("listen", "127.0.0.1:17860", "local management bind address")
 	originFlag := flag.String("origin", "http://127.0.0.1:17860", "exact management origin")

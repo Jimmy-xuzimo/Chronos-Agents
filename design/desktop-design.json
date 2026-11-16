@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "font": [
+    "Segoe UI Variable Text",
+    "Segoe UI",
+    "Microsoft YaHei UI",
+    "Microsoft YaHei"
+  ],
+  "ink": "#233044",
+  "muted": "#59667A",
+  "accent": "#4C5F9E",
+  "surface": "#FFFFFF",
+  "canvas": "#F1F5F8",
+  "line": "#DAE1E8",
+  "gradient": [
+    "#D5ECE1",
+    "#E2DAF4",
+    "#F1D6CB"
+  ],
+  "cardRadius": 20,
+  "controlRadius": 12,
+  "buttonHeight": 36,
+  "iconStroke": 1.6,
+  "spacing": 4
+}

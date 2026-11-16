@@ -1,5 +1,5 @@
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.0.1"
 #endif
 [Setup]
 AppId={{9BDCF408-68ED-4A31-9146-4EB7E9FDFA42}
@@ -37,13 +37,13 @@ Source: "..\..\artifacts\third-party\*"; DestDir: "{app}\third-party"; Flags: ig
 Source: "..\..\artifacts\ChronosAgent.UI.exe"; DestDir: "{app}"; Flags: ignoreversion restartreplace
 
 [Icons]
-Name: "{autoprograms}\Chronos Agent"; Filename: "{app}\chronos-agent.exe"; Parameters: "--open"
+Name: "{autoprograms}\Chronos Agent"; Filename: "{app}\chronos-agent.exe"; Parameters: "--open --data ""{userappdata}\ChronosAgents"""
 
 [Registry]
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "ChronosAgent"; ValueData: """{app}\chronos-agent.exe"""; Tasks: autostart; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "ChronosAgent"; ValueData: """{app}\chronos-agent.exe"" --data ""{userappdata}\ChronosAgents"""; Tasks: autostart; Flags: uninsdeletevalue
 
 [Run]
-Filename: "{app}\chronos-agent.exe"; Description: "启动 Chronos Agent"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\chronos-agent.exe"; Parameters: "--data ""{userappdata}\ChronosAgents"""; Description: "启动 Chronos Agent"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
 ; Runtime configuration is intentionally retained; uninstall UI documents its
